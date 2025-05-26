@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Front-end",
-    "slug": "Front-end",
+    "name": "Front",
+    "slug": "Front",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "front",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
