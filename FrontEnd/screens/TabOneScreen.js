@@ -1,10 +1,14 @@
-import { StyleSheet, TextInput, Image, ImageBackground, Button } from "react-native";
-
-import EditScreenInfo from "../components/EditScreenInfo";
+import { StyleSheet, TextInput, Image, ImageBackground, Button, Pressable } from "react-native";
+import React from 'react';
 import { Text, View } from "../components/Themed";
+
+const Texto = () => {
+  return <Text style={styles.testing}>Hello</Text>;
+};
 
 export default function TabOneScreen() {
   return (
+    
     <View style={styles.container}>
       <View style={styles.searchingBar}>
       <TextInput></TextInput>
@@ -21,38 +25,39 @@ export default function TabOneScreen() {
         darkColor="rgba(0, 0, 0, 0)"
       />
       
-      <View style={styles.CajasRecetas}>
-          <ImageBackground style={styles.ImagenRecetas} source={"D:/Users/Usuario/Desktop/App_Recetas-main2/App_Recetas-main/FrontEnd/assets/images/Pasta.jpg"}>
+      <Pressable onPress={Texto} style={styles.CajasRecetas}>
+          <ImageBackground style={styles.ImagenRecetas} source={"FrontEnd.assets.images.Pasta.jpg"}>
             <View style={styles.TextoRecetas}>
-              <TextInput textAlign="center">Sheet Pan Salmon With Asparagus</TextInput>
+              <Text style={styles.TextoAjustes}>Sheet Pan Salmon With Asparagus</Text>
             </View>
           </ImageBackground>
-      </View>
+          
+      </Pressable>
       
       <View
         style={styles.separatorR}
         lightColor="#eee"
         darkColor="rgba(255,255,255,0.1)"
       />
-      <View style={styles.CajasRecetas}>
+      <Pressable onPress={Texto} style={styles.CajasRecetas}>
           <ImageBackground style={styles.ImagenRecetas} source={"https://cloudfront-us-east-1.images.arcpublishing.com/infobae/7VEGFDIQAJDKNEYEXRX3BK7DAU.jpg"}>
             <View style={styles.TextoRecetas}>
-              <TextInput textAlign="center" >Ham And Asparagus Strata</TextInput>
+              <Text style={styles.TextoAjustes} >Ham And Asparagus Strata</Text>
             </View>
           </ImageBackground>
-      </View>
+      </Pressable>
       <View
         style={styles.separatorR}
         lightColor="#eee"
         darkColor="rgba(255,255,255,0.1)"
       />
-      <View style={styles.CajasRecetas}>
+      <Pressable onPress={Texto} style={styles.CajasRecetas}>
           <ImageBackground style={styles.ImagenRecetas} source={"https://cloudfront-us-east-1.images.arcpublishing.com/infobae/7VEGFDIQAJDKNEYEXRX3BK7DAU.jpg"}>
             <View style={styles.TextoRecetas}>
-              <TextInput textAlign="center">Corned Beef Tater Tot Casserole</TextInput>
+              <Text style={styles.TextoAjustes}>Corned Beef Tater Tot Casserole</Text>
             </View>
           </ImageBackground>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -106,5 +111,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 145, 0, 0.8)",
     justifyContent: "center",
   },
-
+  TextoAjustes: {
+    textAlign: "center",
+    color: "rgba(0, 0, 0, 0.8)"
+  },
+  testing: {
+    color: "rgba(255, 255, 255, 0.8)",
+    height: 100,
+    width: 100,
+  },
 });
