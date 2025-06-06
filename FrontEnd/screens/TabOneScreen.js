@@ -20,6 +20,7 @@ export default function TabOneScreen() {
         lightColor="#eee"
         darkColor="rgba(0, 0, 0, 0)"
       />
+      
       <View style={styles.CajasRecetas}>
           <ImageBackground style={styles.ImagenRecetas} source={"D:/Users/Usuario/Desktop/App_Recetas-main2/App_Recetas-main/FrontEnd/assets/images/Pasta.jpg"}>
             <View style={styles.TextoRecetas}>
@@ -27,6 +28,7 @@ export default function TabOneScreen() {
             </View>
           </ImageBackground>
       </View>
+      
       <View
         style={styles.separatorR}
         lightColor="#eee"
@@ -96,6 +98,8 @@ const styles = StyleSheet.create({
   ImagenRecetas: {
     flex: 1,
     justifyContent: "flex-end",
+    height: "auto",
+    width: "auto",
   },
   TextoRecetas: {
     height: 35,
