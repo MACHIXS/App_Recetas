@@ -1,9 +1,11 @@
 package ar.uade.edu.apprecetas.dto;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-public class LoginDTO {
+@Getter
+@Setter
+public class LoginRequestDTO {
     private String mail;
     private String password;
 }

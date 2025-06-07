@@ -1,5 +1,5 @@
 package ar.uade.edu.apprecetas.model;
-
+/*
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,3 +27,4 @@ public class Usuario {
 
     private String password;
 }
+*/
