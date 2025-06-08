@@ -6,19 +6,25 @@ import { Text, View } from "../components/Themed";
 export default function TabTwoScreen() {
   return (
     <View style={styles.container}>
-      <View style={styles.home}>
-      <Pressable>
-      </Pressable>
+      <EditScreenInfo path="/screens/TabThreeScreen.tsx" />
+      <Text style={styles.title}>Complete los siguientes datos</Text>
+      <View>
+        <View>
+        <Text>Nombre</Text>
+          <TextInput>Example</TextInput>
+        </View>
+        <View>
+        <Text>Apellido</Text>
+          <TextInput> Example</TextInput>
+        </View>
       </View>
-      <Text style={styles.title}>Cambiar contraseña</Text>
-
       <View>
       <Text>Contraseña</Text>
-        <TextInput>*********</TextInput>
+        <TextInput>**********</TextInput>
       </View>
       <View>
-      <Text>Confirmar Contraseña</Text>
-        <TextInput>*********</TextInput>
+      <Text>Fecha de nacimiento</Text>
+        <TextInput>DD/MM/AAAA</TextInput>
       </View>
       <Button title = "Finalizar"/>
     </View>
@@ -40,9 +46,7 @@ const styles = StyleSheet.create({
     height: 1,
     width: "80%",
   },
-  home: {
-    width: 50,
-    height: 50,
-    Color: "rgba(175, 145, 145, 0)",
+  logo: {
+    Color: "rgba(89, 87, 87, 0)",
   },
 });

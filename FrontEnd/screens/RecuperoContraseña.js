@@ -3,24 +3,20 @@ import { Pressable, StyleSheet, Button, Image, TextInput } from "react-native";
 import EditScreenInfo from "../components/EditScreenInfo";
 import { Text, View } from "../components/Themed";
 
-export default function TabTwoScreen() {
+export default function RecuperoContraseña() {
   return (
     <View style={styles.container}>
       <View style={styles.home}>
       <Pressable>
       </Pressable>
       </View>
-      <Text style={styles.title}>Cambiar contraseña</Text>
-
+      <Text style={styles.title}>Ingrese su correo electrónico</Text>
+      <Text>Se le enviará un enlace para modificar la contraseña</Text>
       <View>
-      <Text>Contraseña</Text>
-        <TextInput>*********</TextInput>
+      <Text>Correo Electronico</Text>
+        <TextInput>correo@exmample.com</TextInput>
       </View>
-      <View>
-      <Text>Confirmar Contraseña</Text>
-        <TextInput>*********</TextInput>
-      </View>
-      <Button title = "Finalizar"/>
+      <Button title = "Continuar"/>
     </View>
   );
 }
