@@ -3,11 +3,15 @@ package ar.uade.edu.apprecetas.service;
 import ar.uade.edu.apprecetas.dto.LoginRequestDTO;
 import ar.uade.edu.apprecetas.dto.LoginResponseDTO;
 import ar.uade.edu.apprecetas.dto.RegistroFinalDTO;
+import ar.uade.edu.apprecetas.dto.UpgradeToAlumnoDTO;
+import ar.uade.edu.apprecetas.entity.Alumno;
 import ar.uade.edu.apprecetas.entity.Usuario;
 import ar.uade.edu.apprecetas.entity.VerificacionRegistro;
+import ar.uade.edu.apprecetas.repository.AlumnoRepository;
 import ar.uade.edu.apprecetas.repository.UsuarioRepository;
 import ar.uade.edu.apprecetas.repository.VerificacionRegistroRepository;
 import ar.uade.edu.apprecetas.security.JwtUtil;
+import ar.uade.edu.apprecetas.utils.CodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,9 +31,9 @@ public class UsuarioService {
     @Autowired
     private PasswordEncoder passwordEncoder; // Lo configurás en SecurityConfig
 
-    /**
+    @Autowired
+    private EmailService emailService;
 
-     Inicia el proceso de registro creando un usuario "pendiente" y un token.*/
     public void iniciarRegistro(String mail, String nickname) {
         if (usuarioRepository.existsByMail(mail)) {
             throw new IllegalStateException("El mail ya está registrado.");}
@@ -45,13 +49,14 @@ public class UsuarioService {
         VerificacionRegistro vr = new VerificacionRegistro();
         vr.setUsuario(usuario);
         vr.setTipo(VerificacionRegistro.Tipo.registro);
-        vr.setToken(UUID.randomUUID().toString());
+
+        vr.setToken(CodeGenerator.generateAlphaNumCode(6));
+
         vr.setFechaCreacion(LocalDateTime.now());
         vr.setExpiracion(LocalDateTime.now().plusHours(24));
         verificacionRepo.save(vr);
 
-        // Acá podrías mandar un mail real.
-        System.out.println("TOKEN DE ACTIVACIÓN: " + vr.getToken());
+        emailService.enviarTokenRegistro(usuario.getMail(), vr.getToken());
     }
 
     public void finalizarRegistro(RegistroFinalDTO dto) {
@@ -95,6 +100,31 @@ public class UsuarioService {
         String jwt = jwtUtil.generateToken(usuario.getMail());
 
         return new LoginResponseDTO(jwt, usuario.getNickname());
+    }
+
+    @Autowired
+    private AlumnoRepository alumnoRepository;
+
+    public void convertirAAlumno(String mail, UpgradeToAlumnoDTO dto) {
+        // Buscá usuario
+        Usuario usuario = usuarioRepository.findByMail(mail)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        // 2) Chequea que no sea alumno
+        if (alumnoRepository.existsByUsuarioIdUsuario(usuario.getIdUsuario())) {
+            throw new IllegalStateException("Ya es alumno");
+        }
+
+        // 3) construye la entity y guardá
+        Alumno alumno = new Alumno();
+        alumno.setUsuario(usuario);
+        alumno.setNumeroTarjeta(dto.getNumeroTarjeta());
+        alumno.setDniFrente(dto.getDniFrente());
+        alumno.setDniFondo(dto.getDniFondo());
+        alumno.setTramite(dto.getTramite());
+        alumno.setCuentaCorriente(java.math.BigDecimal.ZERO);
+
+        alumnoRepository.save(alumno);
     }
 
 }
