@@ -1,0 +1,8 @@
+additions to the DB
+
+alter table usuarios
+    add column password VARCHAR(255),
+    add column apellido VARCHAR(150),
+    add column fechaNacimiento DATE,
+    add column estadoRegistro ENUM('pendiente','completo') DEFAULT 'pendiente';
+
