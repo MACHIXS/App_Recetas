@@ -1,13 +1,12 @@
 import { StyleSheet, TextInput, Image, ImageBackground, Button, Pressable } from "react-native";
-
-import EditScreenInfo from "../components/EditScreenInfo";
+import React from 'react';
 import { Text, View } from "../components/Themed";
 
 const Texto = () => {
   return <Text style={styles.testing}>Hello</Text>;
 };
 
-export default function TableTwoScreen() {
+export default function TabOneScreen() {
   return (
     
     <View style={styles.container}>
@@ -15,19 +14,11 @@ export default function TableTwoScreen() {
       <TextInput></TextInput>
       </View>
       <View
-        style={styles.separatorR}
+        style={styles.separator}
         lightColor="#eee"
         darkColor="rgba(0, 0, 0, 0)"
       />
-      <View style={styles.cursos}>
-        <Button style={styles.cursos} title = "Mis cursos"/>
-      </View>
-      <View
-        style={styles.separatorR}
-        lightColor="#eee"
-        darkColor="rgba(0, 0, 0, 0)"
-      />
-      <Text style={styles.title}>Ultimos cursos</Text>
+      <Text style={styles.title}>Ultimas recetas</Text>
       <View
         style={styles.separator}
         lightColor="#eee"
@@ -37,7 +28,7 @@ export default function TableTwoScreen() {
       <Pressable onPress={Texto} style={styles.CajasRecetas}>
           <ImageBackground style={styles.ImagenRecetas} source={"FrontEnd.assets.images.Pasta.jpg"}>
             <View style={styles.TextoRecetas}>
-              <Text style={styles.TextoAjustes}>Matering the argentinian "Asado"</Text>
+              <Text style={styles.TextoAjustes}>Sheet Pan Salmon With Asparagus</Text>
             </View>
           </ImageBackground>
           
@@ -51,7 +42,7 @@ export default function TableTwoScreen() {
       <Pressable onPress={Texto} style={styles.CajasRecetas}>
           <ImageBackground style={styles.ImagenRecetas} source={"https://cloudfront-us-east-1.images.arcpublishing.com/infobae/7VEGFDIQAJDKNEYEXRX3BK7DAU.jpg"}>
             <View style={styles.TextoRecetas}>
-              <Text style={styles.TextoAjustes} > Cooking 101</Text>
+              <Text style={styles.TextoAjustes} >Ham And Asparagus Strata</Text>
             </View>
           </ImageBackground>
       </Pressable>
@@ -60,6 +51,13 @@ export default function TableTwoScreen() {
         lightColor="#eee"
         darkColor="rgba(255,255,255,0.1)"
       />
+      <Pressable onPress={Texto} style={styles.CajasRecetas}>
+          <ImageBackground style={styles.ImagenRecetas} source={"https://cloudfront-us-east-1.images.arcpublishing.com/infobae/7VEGFDIQAJDKNEYEXRX3BK7DAU.jpg"}>
+            <View style={styles.TextoRecetas}>
+              <Text style={styles.TextoAjustes}>Corned Beef Tater Tot Casserole</Text>
+            </View>
+          </ImageBackground>
+      </Pressable>
     </View>
   );
 }
@@ -94,21 +92,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 145, 0, 0.8)",
     borderRadius: "5%",
     borderWidth: 1.5,
-  },
-  cursos: {
-    height: 40,
-    width: "70%",
-    backgroundColor: "rgba(206, 206, 206, 0.8)",
-    borderColor: "rgba(255, 145, 0, 0.8)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "5%",
-    borderWidth: 1.5,
-  },
-  cursosTexto:{
-    alignItems: "center",
-    justifyContent: "center",
-    color: "rgba(0,0,0,0)"
   },
   CajasRecetas: {
     height: 130,
