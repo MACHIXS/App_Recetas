@@ -11,7 +11,13 @@ export default function TabOneScreen() {
     
     <View style={styles.container}>
       <View style={styles.cajaPerfil} >
-
+        <View style={styles.fotoDeperfil}>
+          <View style={styles.circulo}></View>
+        </View>
+        <View style={styles.TextoPerfil}>
+          <Text>Jhon Lennon</Text>
+          <Text>JLennon@gmail.com</Text>
+        </View>
       </View>
       <View
         style={styles.separator}
@@ -61,6 +67,23 @@ const styles = StyleSheet.create({
     textAlign: "start",
     marginRight: "40%",
   },
+  fotoDeperfil:{
+    justifyContent: "center",
+    backgroundColor:"rgba(167, 162, 162, 0.8)",
+  },
+  circulo:{
+    width: 70,
+    height: 70,
+    borderRadius: "50%",
+    backgroundColor: "rgba(107, 105, 102, 0.98)",
+    borderColor: "rgba(255, 153, 0, 0.98)",
+    borderWidth: 1.5,
+  },
+  TextoPerfil: {
+    gap: 10,
+    justifyContent: "center",
+    backgroundColor:"rgba(167, 162, 162, 0.8)",
+  },
  
   separator: {
     marginVertical: 5,
@@ -79,7 +102,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 145, 0, 0.8)",
     borderRadius: "5%",
     borderWidth: 1.5,
+    justifyContent: "center",
+    alignItems:"start",
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
   },
+  
   cajaAjustes: {
     height: 300,
     alignItems: "center",
