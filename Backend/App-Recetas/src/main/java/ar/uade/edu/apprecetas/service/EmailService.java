@@ -20,4 +20,13 @@ public class EmailService {
                 + "\n\nVálido por 24 horas.");
         mailSender.send(msg);
     }
+
+    public void enviarTokenRecuperacion(String destinatario, String code) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(destinatario);
+        msg.setSubject("Recuperación de contraseña");
+        msg.setText("Tu código de recuperación es: " + code
+                + "\nVálido por 30 minutos.");
+        mailSender.send(msg);
+    }
 }

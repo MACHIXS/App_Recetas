@@ -1,9 +1,6 @@
 package ar.uade.edu.apprecetas.service;
 
-import ar.uade.edu.apprecetas.dto.LoginRequestDTO;
-import ar.uade.edu.apprecetas.dto.LoginResponseDTO;
-import ar.uade.edu.apprecetas.dto.RegistroFinalDTO;
-import ar.uade.edu.apprecetas.dto.UpgradeToAlumnoDTO;
+import ar.uade.edu.apprecetas.dto.*;
 import ar.uade.edu.apprecetas.entity.Alumno;
 import ar.uade.edu.apprecetas.entity.Usuario;
 import ar.uade.edu.apprecetas.entity.VerificacionRegistro;
@@ -16,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -105,26 +104,73 @@ public class UsuarioService {
     @Autowired
     private AlumnoRepository alumnoRepository;
 
-    public void convertirAAlumno(String mail, UpgradeToAlumnoDTO dto) {
+    public void convertirAAlumno(
+            String mail,
+            String numeroTarjeta,
+            LocalDate fechaVencimientoTarjeta,
+            String codigoSeguridadTarjeta,
+            String tramite,
+            String urlDniFrente,
+            String urlDniFondo){
         // Buscá usuario
         Usuario usuario = usuarioRepository.findByMail(mail)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         // 2) Chequea que no sea alumno
         if (alumnoRepository.existsByUsuarioIdUsuario(usuario.getIdUsuario())) {
-            throw new IllegalStateException("Ya es alumno");
+            throw new IllegalStateException("Ya eres alumno");
         }
 
         // 3) construye la entity y guardá
-        Alumno alumno = new Alumno();
-        alumno.setUsuario(usuario);
-        alumno.setNumeroTarjeta(dto.getNumeroTarjeta());
-        alumno.setDniFrente(dto.getDniFrente());
-        alumno.setDniFondo(dto.getDniFondo());
-        alumno.setTramite(dto.getTramite());
-        alumno.setCuentaCorriente(java.math.BigDecimal.ZERO);
+        Alumno a = new Alumno();
+        a.setUsuario(usuario);
+        a.setNumeroTarjeta(numeroTarjeta);
+        a.setFechaVencimientoTarjeta(fechaVencimientoTarjeta);
+        a.setCodigoSeguridadTarjeta(codigoSeguridadTarjeta);
+        a.setDniFrente(urlDniFrente);
+        a.setDniFondo(urlDniFondo);
+        a.setTramite(tramite);
+        a.setCuentaCorriente(BigDecimal.ZERO);
 
-        alumnoRepository.save(alumno);
+        alumnoRepository.save(a);
     }
+
+
+    /** Paso 1: Genera y envía token de recuperación */
+    public void solicitarRecuperacion(String mail) {
+        Usuario u = usuarioRepository.findByMail(mail)
+                .orElseThrow(() -> new IllegalArgumentException("Email no registrado"));
+        if (u.getEstadoRegistro() != Usuario.EstadoRegistro.completo) {
+            throw new IllegalStateException("Registro incompleto");
+        }
+
+        // Genera código corto
+        String code = CodeGenerator.generateAlphaNumCode(6);
+        VerificacionRegistro vr = new VerificacionRegistro();
+        vr.setUsuario(u);
+        vr.setToken(code);
+        vr.setTipo(VerificacionRegistro.Tipo.password_reset);
+        vr.setFechaCreacion(LocalDateTime.now());
+        vr.setExpiracion(LocalDateTime.now().plusMinutes(30));
+        verificacionRepo.save(vr);
+
+        emailService.enviarTokenRecuperacion(mail, code);
+    }
+
+    /** Paso 2: Confirma token y cambia la contraseña */
+    public void confirmarRecuperacion(PasswordResetDTO dto) {
+        VerificacionRegistro vr = verificacionRepo
+                .findByTokenAndTipo(dto.getToken(), VerificacionRegistro.Tipo.password_reset)
+                .orElseThrow(() -> new IllegalArgumentException("Token inválido"));
+        if (vr.getExpiracion().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Token expirado");
+        }
+        Usuario u = vr.getUsuario();
+        u.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        usuarioRepository.save(u);
+        verificacionRepo.delete(vr);
+    }
+
+
 
 }

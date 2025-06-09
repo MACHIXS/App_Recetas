@@ -20,6 +20,6 @@ public class FileStorageService {
                 + StringUtils.cleanPath(file.getOriginalFilename());
         Path target = root.resolve(filename);
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-        return "/uploads/" + filename;  
+        return "/uploads/" + filename;
     }
 }

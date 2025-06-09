@@ -25,12 +25,22 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                // 2) Stateless (no cookies/sesión)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 3) Rutas públicas vs protegidas
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                        // *** pública: iniciar + finalizar registro
+                        .requestMatchers(HttpMethod.POST, "/api/auth/registro/**").permitAll()
+                        // *** pública: login
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // *** pública: recuperación de contraseña
+                        .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/**").permitAll()
+                        // *** todo lo demás requiere JWT
                         .anyRequest().authenticated()
                 )
+                // 4) Insertamos nuestro filtro antes de que Spring intente form-login/basic
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                // 5) Deshabilitamos los mecanismos por defecto
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable());
 

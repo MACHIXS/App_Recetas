@@ -4,16 +4,24 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "alumnos")
 @Getter @Setter
 public class Alumno {
 
     @Id
-    private Integer idAlumno;  // coincide con usuarios.idUsuario
+    private Integer idAlumno;
 
-    @Column(nullable = false, length = 12)
+    @Column(nullable = false, length = 20)
     private String numeroTarjeta;
+
+    @Column(nullable = false)
+    private LocalDate fechaVencimientoTarjeta;
+
+    @Column(nullable = false, length = 5)
+    private String codigoSeguridadTarjeta;
 
     @Column(nullable = false)
     private String dniFrente;
