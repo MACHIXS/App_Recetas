@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, TextInput, Button, Alert, Text, StyleSheet,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView, ScrollView } from 'react-native';
 import colors from '../theme/colors';
 import { upgradeToAlumno } from '../api/alumno';
+import { useNavigation } from '@react-navigation/native';
 
-export default function UpgradeAlumnoScreen() {
+
+export default function UpgradeAlumnoScreen(navigation) {
   const [numeroTarjeta, setNumeroTarjeta] = useState('');
   const [fechaVencimiento, setFechaVencimiento] = useState('');
   const [cvc, setCvc] = useState('');
@@ -40,6 +44,7 @@ export default function UpgradeAlumnoScreen() {
     }
   };
 
+  
   // ③ Manejar envío al backend
   const handleUpgrade = async () => {
     if (!numeroTarjeta || !fechaVencimiento || !cvc || !tramite || !frenteUri || !fondoUri) {
@@ -54,14 +59,19 @@ export default function UpgradeAlumnoScreen() {
         dniFrenteUri: frenteUri,
         dniFondoUri: fondoUri,
       });
+      await AsyncStorage.setItem('isAlumno', 'true');
       Alert.alert('¡Éxito!', 'Ahora sos alumno.');
+
+
+
     } catch (err) {
       Alert.alert('Error', err.response?.data || err.message);
     }
   };
 
   return (
-    <View style={s.container}>
+    <SafeAreaView style={s.safe}>
+      <ScrollView contentContainerStyle = {s.container}>
       <TextInput
         placeholder="Número de tarjeta"
         style={s.input}
@@ -96,13 +106,20 @@ export default function UpgradeAlumnoScreen() {
       {fondoUri && <Text style={s.preview}>Dorso cargado</Text>}
 
       <Button title="Convertirme en Alumno" onPress={handleUpgrade} color={colors.primary} />
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
-    flex: 1, padding: 24, backgroundColor: colors.background,
+    padding: 24,
+    paddingTop: 48,      // empuja todo 48px hacia abajo
+    backgroundColor: colors.background,
   },
   input: {
     borderWidth: 1, borderColor: colors.text, borderRadius: 8,

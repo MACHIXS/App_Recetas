@@ -1,28 +1,19 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '../theme/colors';
 import { login } from '../api/auth';
-import { CommonActions } from '@react-navigation/native';
 
 export default function LoginScreen({ navigation }) {
-  const [mail, setMail]         = useState('');
+  const [mail, setMail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
     try {
-      // EXTRAER token y nickname de la respuesta
-      const { token, nickname } = await login({ mail, password });
-
-      // Guardar en AsyncStorage
-      await AsyncStorage.setItem('jwt', token);
+      const { nickname } = await login({ mail, password });
+      await AsyncStorage.setItem('jwt', token);          
       await AsyncStorage.setItem('userMail', mail);
       await AsyncStorage.setItem('userNickname', nickname);
-
-      navigation.dispatch(navigation.popToTop());
-
-      navigation.getParent()?.navigate('Recetas');
-
+      navigation.replace('Home', { nickname });
     } catch (err) {
       Alert.alert('Error', err.response?.data || err.message);
     }
@@ -46,11 +37,28 @@ export default function LoginScreen({ navigation }) {
         secureTextEntry
       />
       <Button title="Ingresar" onPress={handleLogin} color={colors.primary} />
+      <Button title="Registrarse" onPress={() => navigation.navigate('RegistroIniciar')} />
+      <Button
+        title="Olvidé mi contraseña"
+        onPress={() => navigation.navigate('PasswordResetRequest')}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex:1, padding:24, justifyContent:'center', backgroundColor:colors.background },
-  input:     { borderWidth:1, borderColor:colors.text, borderRadius:8, padding:12, marginBottom:16, color:colors.text },
+  container: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.text,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    color: colors.text,
+  },
 });
