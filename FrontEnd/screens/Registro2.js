@@ -4,7 +4,7 @@ import EditScreenInfo from "../components/EditScreenInfo";
 import { Text, View } from "../components/Themed";
 import { TextInput } from "react-native-gesture-handler";
 
-export default function TabThreeScreen() {
+export default function Registro2() {
 
   const [inputValue, setInputValue] = useState('');
 

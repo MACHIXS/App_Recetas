@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Button, Image, TextInput } from "react-native";
 import EditScreenInfo from "../components/EditScreenInfo";
 import { Text, View } from "../components/Themed";
 
-export default function TabTwoScreen() {
+export default function Registro3() {
   return (
     <View style={styles.container}>
       <EditScreenInfo path="/screens/TabThreeScreen.tsx" />

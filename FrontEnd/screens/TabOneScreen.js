@@ -35,7 +35,7 @@ export default function TabOneScreen() {
       </Pressable>
       
       <View
-        style={styles.separatorR}
+        style={styles.separator}
         lightColor="#eee"
         darkColor="rgba(255,255,255,0.1)"
       />
@@ -47,7 +47,7 @@ export default function TabOneScreen() {
           </ImageBackground>
       </Pressable>
       <View
-        style={styles.separatorR}
+        style={styles.separator}
         lightColor="#eee"
         darkColor="rgba(255,255,255,0.1)"
       />
@@ -58,7 +58,21 @@ export default function TabOneScreen() {
             </View>
           </ImageBackground>
       </Pressable>
+      <View
+        style={styles.separatorR}
+        lightColor="#eee"
+        darkColor="rgba(255,255,255,0.1)"
+      />
+      <View style={styles.RecetaBoton}>
+        <Button title = "NuevaReceta"/>
+      </View>
+      <View
+        style={styles.separator}
+        lightColor="#eee"
+        darkColor="rgba(255,255,255,0.1)"
+      />
     </View>
+    
   );
 }
 
@@ -81,7 +95,7 @@ const styles = StyleSheet.create({
     width: "80%",
   },
   separatorR: {
-    marginVertical: 15,
+    marginVertical: 10,
     height: 1,
     width: "80%",
   },
@@ -115,6 +129,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "rgba(0, 0, 0, 0.8)"
   },
+  RecetaBoton: {
+    height: 35,
+    width: 240,
+    backgroundColor: "rgba(206, 206, 206, 0.8)",
+    borderColor: "rgba(255, 145, 0, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "5%",
+    borderWidth: 1.5,
+    fontSize: "60%",
+  },
+
   testing: {
     color: "rgba(255, 255, 255, 0.8)",
     height: 100,
