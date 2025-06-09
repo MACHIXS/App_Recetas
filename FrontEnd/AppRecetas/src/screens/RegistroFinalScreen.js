@@ -18,7 +18,14 @@ export default function RegistroFinalScreen({ route, navigation }) {
     try {
       await finalizarRegistro({ token, nombre, apellido, password, fechaNacimiento });
       Alert.alert('¡Listo!', 'Tu cuenta ya está activa.', [
-        { text: 'Ingresar', onPress: () => navigation.replace('Login') }
+        { text: 'Ingresar', onPress: () => navigation.replace('Login') },
+        { text:'OK', onPress: async () => {
+           
+           await AsyncStorage.setItem('userMail', mail);
+           await AsyncStorage.setItem('userNickname', nickname);
+           navigation.replace('Tabs', { screen:'Recetas', params:{ nickname } });
+         }
+       }
       ]);
     } catch (err) {
       Alert.alert('Error', err.response?.data || err.message);

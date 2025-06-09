@@ -14,12 +14,6 @@ import logo from '../../assets/images/logo.png'; // tu logo
 
 export default function HomeScreen({ route, navigation }) {
   const [nickname, setNickname] = useState(route.params?.nickname || '');
-  const [isAlumno, setIsAlumno] = useState(false);
-
-  // Al montar, podrías chequear un flag en AsyncStorage
-  useEffect(() => {
-    AsyncStorage.getItem('isAlumno').then(val => setIsAlumno(val === 'true'));
-  }, []);
 
   const handleLogout = async () => {
     await AsyncStorage.clear();
@@ -57,26 +51,6 @@ export default function HomeScreen({ route, navigation }) {
           </TouchableOpacity>
         ))}
 
-        {/* Sólo si no es alumno */}
-        {!isAlumno && (
-          <TouchableOpacity
-            style={[s.card, s.upgradeCard]}
-            onPress={() => navigation.navigate('UpgradeAlumno')}
-            activeOpacity={0.7}
-          >
-            <Text style={[s.cardText, s.upgradeText]}>
-              Convertirme en alumno
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={s.logout}
-          onPress={handleLogout}
-          activeOpacity={0.7}
-        >
-          <Text style={s.logoutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
