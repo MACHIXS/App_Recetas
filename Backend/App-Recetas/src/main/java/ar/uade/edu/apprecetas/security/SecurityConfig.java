@@ -12,7 +12,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -20,29 +19,35 @@ public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
 
-
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // no CSRF ni sesiones
                 .csrf(csrf -> csrf.disable())
-                // 2) Stateless (no cookies/sesión)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 3) Rutas públicas vs protegidas
+
+                // rutas públicas y protegidas
                 .authorizeHttpRequests(auth -> auth
-                        // *** pública: iniciar + finalizar registro
+
+                        // registros y login
                         .requestMatchers(HttpMethod.POST, "/api/auth/registro/**").permitAll()
-                        // *** pública: login
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        // *** pública: recuperación de contraseña
                         .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/**").permitAll()
-                        // *** todo lo demás requiere JWT
+
+                        // listar recetas y tipos es público
+                        .requestMatchers(HttpMethod.GET, "/api/recetas/**", "/api/tiposReceta/**","/api/ingredientes/**").permitAll()
+
+                        // todo lo demás requiere JWT
                         .anyRequest().authenticated()
                 )
-                // 4) Insertamos nuestro filtro antes de que Spring intente form-login/basic
+
+                // nuestro filtro JWT
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                // 5) Deshabilitamos los mecanismos por defecto
+
+                // deshabilitar login/logout por defecto
                 .httpBasic(basic -> basic.disable())
-                .formLogin(form -> form.disable());
+                .formLogin(form -> form.disable())
+        ;
 
         return http.build();
     }
@@ -52,4 +57,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-

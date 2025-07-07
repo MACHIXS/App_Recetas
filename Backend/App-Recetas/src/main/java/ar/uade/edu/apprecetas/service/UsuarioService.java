@@ -1,6 +1,9 @@
 package ar.uade.edu.apprecetas.service;
 
-import ar.uade.edu.apprecetas.dto.*;
+import ar.uade.edu.apprecetas.dto.LoginRequestDTO;
+import ar.uade.edu.apprecetas.dto.LoginResponseDTO;
+import ar.uade.edu.apprecetas.dto.RegistroFinalDTO;
+import ar.uade.edu.apprecetas.dto.PasswordResetDTO;
 import ar.uade.edu.apprecetas.entity.Alumno;
 import ar.uade.edu.apprecetas.entity.Usuario;
 import ar.uade.edu.apprecetas.entity.VerificacionRegistro;
@@ -10,13 +13,16 @@ import ar.uade.edu.apprecetas.repository.VerificacionRegistroRepository;
 import ar.uade.edu.apprecetas.security.JwtUtil;
 import ar.uade.edu.apprecetas.utils.CodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Optional;
 
 @Service
 public class UsuarioService {
@@ -28,16 +34,26 @@ public class UsuarioService {
     private VerificacionRegistroRepository verificacionRepo;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Lo configurás en SecurityConfig
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private AlumnoRepository alumnoRepository;
+
+    // ─── MÉTODOS DE REGISTRO ─────────────────────────────────────────────────────
+
     public void iniciarRegistro(String mail, String nickname) {
         if (usuarioRepository.existsByMail(mail)) {
-            throw new IllegalStateException("El mail ya está registrado.");}
+            throw new IllegalStateException("El mail ya está registrado.");
+        }
         if (usuarioRepository.existsByNickname(nickname)) {
-            throw new IllegalStateException("El alias ya está en uso.");}
+            throw new IllegalStateException("El alias ya está en uso.");
+        }
 
         Usuario usuario = new Usuario();
         usuario.setMail(mail);
@@ -48,27 +64,25 @@ public class UsuarioService {
         VerificacionRegistro vr = new VerificacionRegistro();
         vr.setUsuario(usuario);
         vr.setTipo(VerificacionRegistro.Tipo.registro);
-
         vr.setToken(CodeGenerator.generateAlphaNumCode(6));
-
         vr.setFechaCreacion(LocalDateTime.now());
         vr.setExpiracion(LocalDateTime.now().plusHours(24));
         verificacionRepo.save(vr);
 
-        emailService.enviarTokenRegistro(usuario.getMail(), vr.getToken());
+        emailService.enviarTokenRegistro(mail, vr.getToken());
     }
 
     public void finalizarRegistro(RegistroFinalDTO dto) {
-        VerificacionRegistro vr = verificacionRepo.findByTokenAndTipo(dto.getToken(), VerificacionRegistro.Tipo.registro)
+        VerificacionRegistro vr = verificacionRepo
+                .findByTokenAndTipo(dto.getToken(), VerificacionRegistro.Tipo.registro)
                 .orElseThrow(() -> new IllegalArgumentException("Token inválido o no encontrado."));
-
         if (vr.getExpiracion().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("El token ha expirado.");
         }
 
         Usuario usuario = vr.getUsuario();
         if (usuario.getEstadoRegistro() == Usuario.EstadoRegistro.completo) {
-            throw new IllegalStateException("El registro ya fue completado.");
+            throw new IllegalStateException("Registro ya completado.");
         }
 
         usuario.setNombre(dto.getNombre());
@@ -76,33 +90,59 @@ public class UsuarioService {
         usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
         usuario.setFechaNacimiento(dto.getFechaNacimiento());
         usuario.setEstadoRegistro(Usuario.EstadoRegistro.completo);
-
         usuarioRepository.save(usuario);
-        verificacionRepo.delete(vr); // eliminamos el token usado
+
+        verificacionRepo.delete(vr);
     }
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    // ─── MÉTODO DE LOGIN ─────────────────────────────────────────────────────────
 
     public LoginResponseDTO login(LoginRequestDTO dto) {
         Usuario usuario = usuarioRepository.findByMail(dto.getMail())
-                .orElseThrow(() -> new IllegalArgumentException("El mail no está registrado."));
-
+                .orElseThrow(() -> new IllegalArgumentException("Mail no registrado."));
         if (usuario.getEstadoRegistro() != Usuario.EstadoRegistro.completo) {
-            throw new IllegalStateException("El registro no está completo.");
+            throw new IllegalStateException("Registro no completo.");
         }
-
         if (!passwordEncoder.matches(dto.getPassword(), usuario.getPassword())) {
             throw new IllegalArgumentException("Contraseña incorrecta.");
         }
-
-        String jwt = jwtUtil.generateToken(usuario.getMail());
-
-        return new LoginResponseDTO(jwt, usuario.getNickname());
+        String token = jwtUtil.generateToken(usuario.getMail());
+        return new LoginResponseDTO(token, usuario.getNickname());
     }
 
-    @Autowired
-    private AlumnoRepository alumnoRepository;
+    // ─── MÉTODOS DE RECUPERACIÓN DE CONTRASEÑA ──────────────────────────────────
+
+    public void solicitarRecuperacion(String mail) {
+        Usuario u = usuarioRepository.findByMail(mail)
+                .orElseThrow(() -> new IllegalArgumentException("Mail no registrado."));
+        if (u.getEstadoRegistro() != Usuario.EstadoRegistro.completo) {
+            throw new IllegalStateException("Registro no completo.");
+        }
+        VerificacionRegistro vr = new VerificacionRegistro();
+        vr.setUsuario(u);
+        vr.setTipo(VerificacionRegistro.Tipo.password_reset);
+        vr.setToken(CodeGenerator.generateAlphaNumCode(6));
+        vr.setFechaCreacion(LocalDateTime.now());
+        vr.setExpiracion(LocalDateTime.now().plusMinutes(30));
+        verificacionRepo.save(vr);
+
+        emailService.enviarTokenRecuperacion(mail, vr.getToken());
+    }
+
+    public void confirmarRecuperacion(PasswordResetDTO dto) {
+        VerificacionRegistro vr = verificacionRepo
+                .findByTokenAndTipo(dto.getToken(), VerificacionRegistro.Tipo.password_reset)
+                .orElseThrow(() -> new IllegalArgumentException("Token inválido."));
+        if (vr.getExpiracion().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Token expirado.");
+        }
+        Usuario u = vr.getUsuario();
+        u.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        usuarioRepository.save(u);
+        verificacionRepo.delete(vr);
+    }
+
+    // ─── MÉTODO DE CONVERSIÓN A ALUMNO ───────────────────────────────────────────
 
     public void convertirAAlumno(
             String mail,
@@ -111,66 +151,53 @@ public class UsuarioService {
             String codigoSeguridadTarjeta,
             String tramite,
             String urlDniFrente,
-            String urlDniFondo){
-        // Buscá usuario
-        Usuario usuario = usuarioRepository.findByMail(mail)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+            String urlDniFondo) {
 
-        // 2) Chequea que no sea alumno
+        Usuario usuario = usuarioRepository.findByMail(mail)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
         if (alumnoRepository.existsByUsuarioIdUsuario(usuario.getIdUsuario())) {
-            throw new IllegalStateException("Ya eres alumno");
+            throw new IllegalStateException("Ya eres alumno.");
         }
 
-        // 3) construye la entity y guardá
         Alumno a = new Alumno();
         a.setUsuario(usuario);
         a.setNumeroTarjeta(numeroTarjeta);
         a.setFechaVencimientoTarjeta(fechaVencimientoTarjeta);
         a.setCodigoSeguridadTarjeta(codigoSeguridadTarjeta);
+        a.setTramite(tramite);
         a.setDniFrente(urlDniFrente);
         a.setDniFondo(urlDniFondo);
-        a.setTramite(tramite);
         a.setCuentaCorriente(BigDecimal.ZERO);
-
         alumnoRepository.save(a);
     }
 
-
-    /** Paso 1: Genera y envía token de recuperación */
-    public void solicitarRecuperacion(String mail) {
-        Usuario u = usuarioRepository.findByMail(mail)
-                .orElseThrow(() -> new IllegalArgumentException("Email no registrado"));
-        if (u.getEstadoRegistro() != Usuario.EstadoRegistro.completo) {
-            throw new IllegalStateException("Registro incompleto");
-        }
-
-        // Genera código corto
-        String code = CodeGenerator.generateAlphaNumCode(6);
-        VerificacionRegistro vr = new VerificacionRegistro();
-        vr.setUsuario(u);
-        vr.setToken(code);
-        vr.setTipo(VerificacionRegistro.Tipo.password_reset);
-        vr.setFechaCreacion(LocalDateTime.now());
-        vr.setExpiracion(LocalDateTime.now().plusMinutes(30));
-        verificacionRepo.save(vr);
-
-        emailService.enviarTokenRecuperacion(mail, code);
+    /**
+     * Devuelve el Usuario que está autenticado por JWT.
+     * Lanza 401 si no hay nadie autenticado o mail inválido.
+     */
+    public Usuario usuarioLogueado() {
+        String mail = Optional.ofNullable(SecurityContextHolder.getContext()
+                        .getAuthentication())
+                .map(auth -> auth.getName())
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado.")
+                );
+        return usuarioRepository.findByMail(mail)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado.")
+                );
     }
 
-    /** Paso 2: Confirma token y cambia la contraseña */
-    public void confirmarRecuperacion(PasswordResetDTO dto) {
-        VerificacionRegistro vr = verificacionRepo
-                .findByTokenAndTipo(dto.getToken(), VerificacionRegistro.Tipo.password_reset)
-                .orElseThrow(() -> new IllegalArgumentException("Token inválido"));
-        if (vr.getExpiracion().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Token expirado");
-        }
-        Usuario u = vr.getUsuario();
-        u.setPassword(passwordEncoder.encode(dto.getNewPassword()));
-        usuarioRepository.save(u);
-        verificacionRepo.delete(vr);
+    /**
+     * Devuelve el Alumno asociado al Usuario autenticado.
+     * Lanza 403 si ese usuario no está dado de alta como alumno.
+     */
+    public Alumno usuarioLogueadoComoAlumno() {
+        Usuario user = usuarioLogueado();
+        return alumnoRepository.findById(user.getIdUsuario())
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.FORBIDDEN,
+                                "El usuario no está registrado como alumno.")
+                );
     }
-
-
-
 }
