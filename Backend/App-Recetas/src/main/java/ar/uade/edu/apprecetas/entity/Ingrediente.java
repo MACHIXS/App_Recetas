@@ -5,9 +5,12 @@ import lombok.*;
 
 @Entity
 @Table(name="ingredientes")
-@Getter @Setter @NoArgsConstructor
+@Getter @Setter
 public class Ingrediente {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Integer idIngrediente;
     private String nombre;
+
+    public Ingrediente() {}
+    public Ingrediente(String nombre) { this.nombre = nombre; }
 }

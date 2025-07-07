@@ -1,11 +1,13 @@
 package ar.uade.edu.apprecetas.repository;
 
+import ar.uade.edu.apprecetas.entity.EstadoReceta;
 import ar.uade.edu.apprecetas.entity.Receta;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RecetaRepository extends JpaRepository<Receta, Integer> {
     @Query("""
@@ -16,5 +18,16 @@ public interface RecetaRepository extends JpaRepository<Receta, Integer> {
       WHERE LOWER(i.nombre) = LOWER(:nombre)
     """)
     List<Receta> findByIngredienteNombre(@Param("nombre") String nombre);
+
+
+    boolean existsByUsuarioIdUsuarioAndNombreRecetaIgnoreCase(Integer idUsuario, String nombreReceta);
+
+    Optional<Receta> findByUsuarioIdUsuarioAndNombreRecetaIgnoreCase(Integer idUsuario, String nombreReceta);
+
+    List<Receta> findTop3ByEstadoOrderByFechaCreacionDesc(EstadoReceta estado);
+
+    boolean existsByUsuario_MailAndNombreReceta(String mail, String nombreReceta);
+
+    List<Receta> findByUsuario_MailAndNombreReceta(String mail, String nombreReceta);
 }
 

@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Entity
 @Table(name="recetas")
 @Getter @Setter @NoArgsConstructor
@@ -47,6 +48,12 @@ public class Receta {
 
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Paso> pasos;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoReceta estado = EstadoReceta.PENDIENTE;
+
 
 }
 
