@@ -5,9 +5,9 @@ import { NavigationContainer }    from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons }               from '@expo/vector-icons';
 
-import HomeScreen    from './src/screens/HomeScreen';
+
+import RecipeStack from './src/navigation/RecipeStack';
 import CursosScreen  from './src/screens/CursosScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
 import ProfileStackScreen from './src/navigation/ProfileStack';
 
 
@@ -41,7 +41,7 @@ export default function App() {
           },
         })}
       >
-        <Tab.Screen name="Recetas"    component={HomeScreen} options={{ title: 'Recetas' }} />
+        <Tab.Screen name="Recetas"    component={RecipeStack} options={{headerShown: false, title: 'Recetas' }} />
         <Tab.Screen name="Cursos"     component={CursosScreen} options={{ title: 'Cursos' }} />
         <Tab.Screen name="Perfil"     component={ProfileStackScreen} options={{ title:'Perfil' }}/>
       </Tab.Navigator>
