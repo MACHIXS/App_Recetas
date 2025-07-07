@@ -6,9 +6,12 @@ import lombok.Getter;
 public class LoginResponseDTO {
     private String token;
     private String nickname;
+    private boolean alumno;
 
-    public LoginResponseDTO(String token, String nickname) {
+    public LoginResponseDTO(String token, String nickname, boolean alumno) {
         this.token = token;
         this.nickname = nickname;
+        this.alumno = alumno;
+
     }
 }
