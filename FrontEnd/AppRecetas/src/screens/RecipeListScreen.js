@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Text,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -239,6 +240,24 @@ const [ingItems, setIngItems]         = useState([]);
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="none"
       />
+      {/* FAB */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          bottom: 24,
+          right: 24,
+          backgroundColor: colors.primary,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          justifyContent: 'center',
+          alignItems: 'center',
+          elevation: 4,
+        }}
+        onPress={() => navigation.navigate('RecipeForm')}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }

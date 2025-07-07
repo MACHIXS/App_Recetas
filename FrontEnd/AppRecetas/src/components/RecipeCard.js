@@ -11,6 +11,7 @@ export default function RecipeCard({ receta, onPress }) {
         <Text style={s.meta}>Por: {receta.nickname}</Text>
         <Text style={s.meta}>⭐ {receta.calificacionPromedio?.toFixed(1) || 0}</Text>
       </View>
+      
     </TouchableOpacity>
   );
 }

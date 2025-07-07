@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  View, TextInput, Button, Alert, Text, StyleSheet,
+  View, TextInput, Button, Alert, Text, StyleSheet,KeyboardAvoidingView,Platform
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView, ScrollView } from 'react-native';

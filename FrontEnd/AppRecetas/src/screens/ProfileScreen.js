@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation , CommonActions, } from '@react-navigation/native';
 import {
   View, Text, Button, StyleSheet, ActivityIndicator,
 } from 'react-native';
@@ -12,6 +12,19 @@ export default function ProfileScreen({ navigation }) {
   const [mail,     setMail]   = useState('');
   const [nickname,setNickname]= useState('');
   const [isAlumno, setIsAlumno] = useState(false);
+
+const navigation2 = useNavigation();
+
+const goToMyRecipes = () => {
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'Recetas',         // el nombre de la pestaña
+        params: {
+          screen: 'MyRecipes',   // el nombre dentro del stack
+        },
+      })
+    );
+  };
 
   useFocusEffect(
    React.useCallback(() => {
@@ -92,6 +105,12 @@ export default function ProfileScreen({ navigation }) {
           navigation.navigate('Recetas');
         }}
         color={colors.error}
+      />
+       <View style={{ height:16 }} />
+     <Button
+        title="Mis recetas"
+        onPress={goToMyRecipes}
+        color={colors.primary}
       />
     </View>
   );

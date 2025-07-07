@@ -11,3 +11,9 @@ export const getRecetasPorIngrediente = nombre =>
 
 export const getRecetaDetalle = id =>
   client.get(`/recetas/${id}`);
+
+export const createReceta = (dto) =>
+  client.post('/recetas',dto);
+
+export const getMyRecetas = () =>
+  client.get('/recetas/mias');  
