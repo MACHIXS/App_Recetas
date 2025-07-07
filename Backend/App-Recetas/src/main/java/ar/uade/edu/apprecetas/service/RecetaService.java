@@ -52,7 +52,7 @@ public class RecetaService {
 
     /** Listado básico de recetas */
     public List<RecetaDto> listarRecetas() {
-        return repo.findAll()
+        return repo.findByEstado(EstadoReceta.APROBADA)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -61,6 +61,13 @@ public class RecetaService {
     /** Listado de recetas que usan un ingrediente */
     public List<RecetaDto> listarPorIngrediente(String nombre) {
         return repo.findByIngredienteNombre(nombre)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<RecetaDto> listarMias(String mailUsuario) {
+        return repo.findByUsuarioMail(mailUsuario)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());

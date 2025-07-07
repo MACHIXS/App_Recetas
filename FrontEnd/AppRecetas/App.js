@@ -41,7 +41,7 @@ export default function App() {
           },
         })}
       >
-        <Tab.Screen name="Recetas"    component={RecipeStack} options={{headerShown: false, title: 'Recetas' }} />
+        <Tab.Screen name="Recetas"    component={RecipeStack} options={{title: 'Recetas' }} />
         <Tab.Screen name="Cursos"     component={CourseStack} options={{ title: 'Cursos' }} />
         <Tab.Screen name="Perfil"     component={ProfileStackScreen} options={{ title:'Perfil' }}/>
       </Tab.Navigator>

@@ -22,11 +22,6 @@ public class RecetaController {
         this.jwtUtil = jwtUtil;
     }
 
-    @GetMapping
-    public List<RecetaDto> list() {
-        return service.listarRecetas();
-    }
-
     @GetMapping("/ingrediente")
     public List<RecetaDto> byIngrediente(@RequestParam String nombre) {
         return service.listarPorIngrediente(nombre);
@@ -46,6 +41,17 @@ public class RecetaController {
         String mail = jwtUtil.extractMail(auth.substring(7));
         service.crearOReemplazarReceta(mail, dto);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping
+    public List<RecetaDto> listPublicas() {
+        return service.listarRecetas();  // ahora solo aprobadas
+    }
+
+    @GetMapping("/mias")
+    public List<RecetaDto> listMias(@RequestHeader("Authorization") String auth) {
+        String mail = jwtUtil.extractMail(auth.substring(7));
+        return service.listarMias(mail);
     }
 }
 

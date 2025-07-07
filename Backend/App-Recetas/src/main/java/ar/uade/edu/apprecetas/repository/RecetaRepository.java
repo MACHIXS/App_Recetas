@@ -19,15 +19,13 @@ public interface RecetaRepository extends JpaRepository<Receta, Integer> {
     """)
     List<Receta> findByIngredienteNombre(@Param("nombre") String nombre);
 
-
-    boolean existsByUsuarioIdUsuarioAndNombreRecetaIgnoreCase(Integer idUsuario, String nombreReceta);
-
-    Optional<Receta> findByUsuarioIdUsuarioAndNombreRecetaIgnoreCase(Integer idUsuario, String nombreReceta);
-
-    List<Receta> findTop3ByEstadoOrderByFechaCreacionDesc(EstadoReceta estado);
-
     boolean existsByUsuario_MailAndNombreReceta(String mail, String nombreReceta);
 
     List<Receta> findByUsuario_MailAndNombreReceta(String mail, String nombreReceta);
+
+    List<Receta> findByEstado(EstadoReceta estado);
+
+    @Query("SELECT r FROM Receta r WHERE r.usuario.mail = :mail")
+    List<Receta> findByUsuarioMail(@Param("mail") String mail);
 }
 
