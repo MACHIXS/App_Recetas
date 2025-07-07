@@ -227,4 +227,23 @@ public class RecetaService {
         if (url.endsWith(".mp3")) return "audio";
         return "foto";
     }
+
+    public void aprobarReceta(String mailUsuario, Integer idReceta) {
+        // 1) Buscamos al usuario que hace la petición
+        Usuario usuario = usuarioRepo.findByMail(mailUsuario)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+        // 2) Verificamos que sea ADMIN
+        if (usuario.getRol() != Rol.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo un admin puede aprobar recetas");
+        }
+
+        // 3) Buscamos la receta
+        Receta receta = repo.findById(idReceta)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receta no encontrada"));
+
+        // 4) Cambiamos el estado y guardamos
+        receta.setEstado(EstadoReceta.APROBADA);
+        repo.save(receta);
+    }
 }

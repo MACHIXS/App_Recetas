@@ -43,6 +43,9 @@ public class SecurityConfig {
                                 "/api/cronogramas/**",
                                 "/api/sedes/**").permitAll()
 
+                        .requestMatchers(HttpMethod.PATCH, "/api/recetas/*/aprobar").hasRole("ADMIN")
+
+
                         // todo lo demás requiere JWT
                         .anyRequest().authenticated()
                 )

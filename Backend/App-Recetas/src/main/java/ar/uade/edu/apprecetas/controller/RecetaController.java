@@ -6,6 +6,7 @@ import ar.uade.edu.apprecetas.dto.RecetaDto;
 import ar.uade.edu.apprecetas.security.JwtUtil;
 import ar.uade.edu.apprecetas.service.RecetaService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ar.uade.edu.apprecetas.service.RecetaService;
 
@@ -53,5 +54,16 @@ public class RecetaController {
         String mail = jwtUtil.extractMail(auth.substring(7));
         return service.listarMias(mail);
     }
+
+    @PatchMapping("/{idReceta}/aprobar")
+    public ResponseEntity<Void> aprobarReceta(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Integer idReceta) {
+
+        String mail = jwtUtil.extractMail(auth.substring(7));
+        service.aprobarReceta(mail, idReceta);
+        return ResponseEntity.ok().build();
+    }
+
 }
 
