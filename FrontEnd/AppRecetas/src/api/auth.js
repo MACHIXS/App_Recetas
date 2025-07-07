@@ -10,11 +10,18 @@ export const finalizarRegistro = ({ token, nombre, apellido, password, fechaNaci
   client.post('/auth/registro/finalizar', { token, nombre, apellido, password, fechaNacimiento });
 
 // 3) Login
-export const login = async ({ mail, password }) => {
-  const { data } = await client.post('/auth/login', { mail, password });
-  await AsyncStorage.setItem('jwt', data.token);
-  return data;
-};
+//export const login = async ({ mail, password }) => {
+//  const { data } = await client.post('/auth/login', { mail, password });
+//  await AsyncStorage.setItem('jwt', data.token);
+//  return data;
+//};
+
+export function login(credentials) {
+  // devolvemos TODO lo que responda /auth/login: { token, nickname, alumno }
+  return client
+    .post('/auth/login', credentials)
+    .then(res => res.data);
+}
 
 // 4) Solicitar recuperación de contraseña
 export const requestPasswordReset = ({ mail }) =>

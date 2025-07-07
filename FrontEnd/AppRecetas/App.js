@@ -1,4 +1,3 @@
-// App.js
 import 'react-native-gesture-handler';
 import * as React from 'react';
 import { NavigationContainer }    from '@react-navigation/native';
@@ -9,6 +8,7 @@ import { Ionicons }               from '@expo/vector-icons';
 import RecipeStack from './src/navigation/RecipeStack';
 import CursosScreen  from './src/screens/CursosScreen';
 import ProfileStackScreen from './src/navigation/ProfileStack';
+import CourseStack from './src/navigation/CourseStack';
 
 
 
@@ -42,7 +42,7 @@ export default function App() {
         })}
       >
         <Tab.Screen name="Recetas"    component={RecipeStack} options={{headerShown: false, title: 'Recetas' }} />
-        <Tab.Screen name="Cursos"     component={CursosScreen} options={{ title: 'Cursos' }} />
+        <Tab.Screen name="Cursos"     component={CourseStack} options={{ title: 'Cursos' }} />
         <Tab.Screen name="Perfil"     component={ProfileStackScreen} options={{ title:'Perfil' }}/>
       </Tab.Navigator>
     </NavigationContainer>

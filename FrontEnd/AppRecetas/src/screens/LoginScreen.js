@@ -12,12 +12,13 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     try {
       // EXTRAER token y nickname de la respuesta
-      const { token, nickname } = await login({ mail, password });
+      const { token, nickname, alumno } = await login({ mail, password });
 
       // Guardar en AsyncStorage
       await AsyncStorage.setItem('jwt', token);
       await AsyncStorage.setItem('userMail', mail);
       await AsyncStorage.setItem('userNickname', nickname);
+      await AsyncStorage.setItem('isAlumno', alumno ? 'true' : 'false');
 
       navigation.dispatch(navigation.popToTop());
 

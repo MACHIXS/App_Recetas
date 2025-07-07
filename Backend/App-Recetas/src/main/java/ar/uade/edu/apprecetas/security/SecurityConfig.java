@@ -35,7 +35,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/**").permitAll()
 
                         // listar recetas y tipos es público
-                        .requestMatchers(HttpMethod.GET, "/api/recetas/**", "/api/tiposReceta/**","/api/ingredientes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/recetas/**",
+                                "/api/tiposReceta/**",
+                                "/api/ingredientes/**",
+                                "/api/cursos/**",
+                                "/api/cronogramas/**",
+                                "/api/sedes/**").permitAll()
 
                         // todo lo demás requiere JWT
                         .anyRequest().authenticated()

@@ -107,7 +107,10 @@ public class UsuarioService {
             throw new IllegalArgumentException("Contraseña incorrecta.");
         }
         String token = jwtUtil.generateToken(usuario.getMail());
-        return new LoginResponseDTO(token, usuario.getNickname());
+
+        boolean esAlumno = alumnoRepository.existsByUsuarioIdUsuario(usuario.getIdUsuario());
+
+        return new LoginResponseDTO(token, usuario.getNickname(), esAlumno);
     }
 
     // ─── MÉTODOS DE RECUPERACIÓN DE CONTRASEÑA ──────────────────────────────────
