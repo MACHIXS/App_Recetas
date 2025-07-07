@@ -17,11 +17,13 @@ export const finalizarRegistro = ({ token, nombre, apellido, password, fechaNaci
 //};
 
 export function login(credentials) {
-  // devolvemos TODO lo que responda /auth/login: { token, nickname, alumno }
   return client
     .post('/auth/login', credentials)
-    .then(res => res.data);
-}
+    .then(res => {
+      AsyncStorage.setItem('userRole', res.data.role);
+      return res.data;
+    });
+  }
 
 // 4) Solicitar recuperación de contraseña
 export const requestPasswordReset = ({ mail }) =>
@@ -30,3 +32,5 @@ export const requestPasswordReset = ({ mail }) =>
 // 5) Confirmar recuperación de contraseña
 export const confirmPasswordReset = ({ token, newPassword }) =>
   client.post('/auth/password-reset/confirm', { token, newPassword });
+
+

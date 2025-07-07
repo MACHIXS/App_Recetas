@@ -17,3 +17,6 @@ export const createReceta = (dto) =>
 
 export const getMyRecetas = () =>
   client.get('/recetas/mias');  
+
+export const aprobarReceta = id =>
+  client.patch(`/recetas/${id}/aprobar`);
