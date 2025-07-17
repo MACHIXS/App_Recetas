@@ -4,13 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "unidades")
-@Getter @Setter @NoArgsConstructor
+@Table(name="unidades")
+@Data
 public class Unidad {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Integer idUnidad;
-
-    @Column(nullable = false, length = 50)
     private String descripcion;
 }

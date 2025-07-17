@@ -5,6 +5,7 @@ import ar.uade.edu.apprecetas.service.FileStorageService;
 import ar.uade.edu.apprecetas.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -13,6 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -25,13 +29,23 @@ public class AuthController {
 
     @PostMapping("/registro/iniciar")
     public ResponseEntity<?> iniciarRegistro(@RequestBody RegistroInicioDTO dto) {
-        try {
-            usuarioService.iniciarRegistro(dto.getMail(), dto.getNickname());
-            return ResponseEntity.ok("Registro iniciado. Revisa tu correo.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        String alias = dto.getNickname();
+        // 1) Si el alias ya existe, devolvemos 409 con sugerencias
+        if (usuarioService.aliasExists(alias)) {
+            List<String> sugerencias = usuarioService.generarSugerenciasAlias(alias);
+            Map<String,Object> body = new HashMap<>();
+            body.put("message", "Alias en uso");
+            body.put("suggestions", sugerencias);
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(body);
         }
+
+        // 2) Si no existe, procedemos con el registro
+        usuarioService.iniciarRegistro(dto.getMail(), alias);
+        return ResponseEntity.ok("Registro iniciado. Revisa tu correo.");
     }
+
 
     @PostMapping("/registro/finalizar")
     public ResponseEntity<?> finalizarRegistro(@RequestBody RegistroFinalDTO dto) {
@@ -59,9 +73,6 @@ public class AuthController {
     public ResponseEntity<?> upgradeToAlumno(
             Authentication authentication,                       // <–– inyecta autenticado
             @RequestParam("numeroTarjeta") String numeroTarjeta,
-            @RequestParam("fechaVencimientoTarjeta")
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate fechaVencimientoTarjeta,
             @RequestParam("codigoSeguridadTarjeta") String codigoSeguridadTarjeta,
             @RequestParam("tramite") String tramite,
             @RequestParam("dniFrente") MultipartFile dniFrente,
@@ -71,18 +82,16 @@ public class AuthController {
             String mail = authentication.getName();  // ← tu JWT-filter puso el mail aquí
 
             // guardo archivos
-            String urlFrente = storage.store(dniFrente);
-            String urlFondo  = storage.store(dniFondo);
+            String urlDniFrente = storage.store(dniFrente);
+            String urlDniFondo  = storage.store(dniFondo);
 
             // llamo al service pasándole el mail real
             usuarioService.convertirAAlumno(
                     mail,
                     numeroTarjeta,
-                    fechaVencimientoTarjeta,
-                    codigoSeguridadTarjeta,
                     tramite,
-                    urlFrente,
-                    urlFondo
+                    urlDniFrente,
+                    urlDniFondo
             );
             return ResponseEntity.ok("Registro como alumno completado");
         } catch (Exception e) {
@@ -110,6 +119,12 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/alias-suggestions")
+    public ResponseEntity<List<String>> aliasSuggestions(@RequestParam String nickname) {
+        List<String> list = usuarioService.generarSugerenciasAlias(nickname);
+        return ResponseEntity.ok(list);
     }
 
 }

@@ -34,8 +34,9 @@ export default function RecipeListScreen({ navigation }) {
   const [openOrder,   setOpenOrder]  = useState(false);
   const [orderValue,  setOrderValue] = useState('nuevas');
   const [orderItems]                = useState([
-    { label: 'Alfabético', value: 'alfabetico' },
-    { label: 'Más nuevas',  value: 'nuevas' },
+    { label: 'Alfabético',   value: 'alfabetico' },
+    { label: 'Más nuevas',    value: 'nuevas' },
+    { label: 'Más antiguas',  value: 'antiguas' },
   ]);
 
   const [openTipo,   setOpenTipo]   = useState(false);
@@ -47,49 +48,53 @@ export default function RecipeListScreen({ navigation }) {
   const [ingItems,   setIngItems]   = useState([]);
 
   // 1) recarga global al ganar foco
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      setLoading(true);
+      setError(null);
 
-    (async () => {
-      try {
-        const [{ data: recs }, { data: tiposData }, { data: ingData }] =
-          await Promise.all([getRecetas(), getTipos(), getIngredientes()]);
-        if (!active) return;
+      (async () => {
+        try {
+          const [{ data: recs }, { data: tiposData }, { data: ingData }] =
+            await Promise.all([getRecetas(), getTipos(), getIngredientes()]);
+          if (!active) return;
 
-        setRecetas(recs);
-        setTipos(tiposData);
-        setTipoItems([
-          { label: 'Todas las categorías', value: '' },
-          ...tiposData.map(t => ({ label: t.descripcion, value: t.idTipo })),
-        ]);
-        setIngItems([
-          { label: 'Todos los ingredientes', value: '' },
-          ...ingData.map(i => ({ label: i.nombre, value: i.nombre })),
-        ]);
-      } catch (e) {
-        if (active) setError('No se pudieron cargar las recetas.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
+          setRecetas(recs);
+          setTipos(tiposData);
+          setTipoItems([
+            { label: 'Todas las categorías', value: '' },
+            ...tiposData.map(t => ({ label: t.descripcion, value: t.idTipo })),
+          ]);
+          setIngItems([
+            { label: 'Todos los ingredientes', value: '' },
+            ...ingData.map(i => ({ label: i.nombre, value: i.nombre })),
+          ]);
+        } catch (e) {
+          if (active) setError('No se pudieron cargar las recetas.');
+        } finally {
+          if (active) setLoading(false);
+        }
+      })();
 
-    return () => { active = false; };
-  }, []));
+      return () => { active = false; };
+    }, [])
+  );
 
   // 2) filtrado por ingrediente/reactivación
-  useFocusEffect(useCallback(() => {
-    setLoading(true);
-    const fetch = ingValue === ''
-      ? getRecetas()
-      : getRecetasPorIngrediente(ingValue);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      const fetch = ingValue === ''
+        ? getRecetas()
+        : getRecetasPorIngrediente(ingValue);
 
-    fetch
-      .then(resp => setRecetas(resp.data))
-      .catch(() => setError(ingValue ? 'Error cargando por ingrediente.' : 'No se pudieron cargar las recetas.'))
-      .finally(() => setLoading(false));
-  }, [ingValue]));
+      fetch
+        .then(resp => setRecetas(resp.data))
+        .catch(() => setError(ingValue ? 'Error cargando por ingrediente.' : 'No se pudieron cargar las recetas.'))
+        .finally(() => setLoading(false));
+    }, [ingValue])
+  );
 
   // 3) composición + búsqueda + orden + slice 3
   const displayList = useMemo(() => {
@@ -109,6 +114,10 @@ export default function RecipeListScreen({ navigation }) {
       if (orderValue === 'nuevas') {
         return new Date(b.fechaCreacion) - new Date(a.fechaCreacion);
       }
+      if (orderValue === 'antiguas') {
+        return new Date(a.fechaCreacion) - new Date(b.fechaCreacion);
+      }
+      // alfabetico
       return a.nombreReceta.localeCompare(b.nombreReceta);
     });
 
@@ -243,5 +252,5 @@ const s = StyleSheet.create({
     borderRadius: 28,
     justifyContent:'center', alignItems:'center',
     elevation:4
-  },
+  }
 });
