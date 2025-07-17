@@ -42,7 +42,7 @@ public class Usuario {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Rol rol;
+    private Rol rol = Rol.USER;
 
     public Rol getRol() {
         return rol;

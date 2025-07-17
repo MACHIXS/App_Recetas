@@ -28,9 +28,9 @@ export default function CourseStack() {
 
       {/* Inscripciones del alumno */}
       <Stack.Screen
-        name="Inscripciones"
-        component={InscripcionesScreen}
-        options={{ title: 'Mis Inscripciones' }}
+      name="Inscripciones"
+      component={InscripcionesScreen}
+      options={{ title: 'Mis Inscripciones' }}
       />
 
       {/* Pantalla de pago */}
@@ -44,6 +44,7 @@ export default function CourseStack() {
       component={WebViewScreen}
        options={{ headerShown: false }}
      />
+     
 
     </Stack.Navigator>
   );

@@ -5,13 +5,16 @@ import ar.uade.edu.apprecetas.dto.LoginResponseDTO;
 import ar.uade.edu.apprecetas.dto.RegistroFinalDTO;
 import ar.uade.edu.apprecetas.dto.PasswordResetDTO;
 import ar.uade.edu.apprecetas.entity.Alumno;
+import ar.uade.edu.apprecetas.entity.Rol;
 import ar.uade.edu.apprecetas.entity.Usuario;
 import ar.uade.edu.apprecetas.entity.VerificacionRegistro;
 import ar.uade.edu.apprecetas.repository.AlumnoRepository;
+import ar.uade.edu.apprecetas.repository.RecetaRepository;
 import ar.uade.edu.apprecetas.repository.UsuarioRepository;
 import ar.uade.edu.apprecetas.repository.VerificacionRegistroRepository;
 import ar.uade.edu.apprecetas.security.JwtUtil;
 import ar.uade.edu.apprecetas.utils.CodeGenerator;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +25,8 @@ import org.springframework.http.HttpStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,6 +50,9 @@ public class UsuarioService {
     @Autowired
     private AlumnoRepository alumnoRepository;
 
+    @Autowired
+    private RecetaRepository recetaRepository;
+
     // ─── MÉTODOS DE REGISTRO ─────────────────────────────────────────────────────
 
     public void iniciarRegistro(String mail, String nickname) {
@@ -59,6 +67,7 @@ public class UsuarioService {
         usuario.setMail(mail);
         usuario.setNickname(nickname);
         usuario.setEstadoRegistro(Usuario.EstadoRegistro.pendiente);
+        usuario.setRol(Rol.USER);
         usuarioRepository.save(usuario);
 
         VerificacionRegistro vr = new VerificacionRegistro();
@@ -95,6 +104,34 @@ public class UsuarioService {
         verificacionRepo.delete(vr);
     }
 
+    @Transactional
+    public void liberarRegistroPendiente(String mail) {
+        Usuario usuario = usuarioRepository
+                .findByMailAndEstadoRegistro(mail, Usuario.EstadoRegistro.pendiente)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No hay registro pendiente para: " + mail
+                ));
+
+        // 1) Borrar verificación (token)
+        verificacionRepo.deleteByUsuario(usuario);
+
+        // 2) Borrar recetas vinculadas a este usuario
+        recetaRepository.deleteByUsuario(usuario);
+
+        // 3) Finalmente, borrar el usuario
+        usuarioRepository.deleteByMail(mail);
+    }
+
+    public List<String> listarMailsPendientes() {
+        return usuarioRepository
+                .findAllByEstadoRegistro(Usuario.EstadoRegistro.pendiente)
+                .stream()
+                .map(Usuario::getMail)
+                .toList();
+    }
+
+
     // ─── MÉTODO DE LOGIN ─────────────────────────────────────────────────────────
 
     public LoginResponseDTO login(LoginRequestDTO dto) {
@@ -106,9 +143,21 @@ public class UsuarioService {
         if (!passwordEncoder.matches(dto.getPassword(), usuario.getPassword())) {
             throw new IllegalArgumentException("Contraseña incorrecta.");
         }
-        String token = jwtUtil.generateToken(usuario.getMail());
 
-        boolean esAlumno = alumnoRepository.existsByUsuarioIdUsuario(usuario.getIdUsuario());
+        // 1) Armamos la lista de roles para el token
+        List<String> roles = new ArrayList<>();
+        // rol principal desde la entidad Usuario (Rol es tu enum)
+        roles.add(usuario.getRol().name());
+        // si además es alumno, lo agregamos como rol
+        if (alumnoRepository.existsByUsuarioIdUsuario(usuario.getIdUsuario())) {
+            roles.add("ALUMNO");
+        }
+
+        // 2) Generamos el token con mail + roles
+        String token = jwtUtil.generateToken(usuario.getMail(), roles);
+
+        // 3) Indicamos si es alumno para la respuesta
+        boolean esAlumno = roles.contains("ALUMNO");
 
         return new LoginResponseDTO(token, usuario.getNickname(), esAlumno);
     }

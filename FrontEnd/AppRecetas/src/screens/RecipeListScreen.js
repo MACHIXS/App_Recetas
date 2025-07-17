@@ -1,3 +1,5 @@
+// src/screens/RecipeListScreen.js
+
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   SafeAreaView,
@@ -27,106 +29,98 @@ export default function RecipeListScreen({ navigation }) {
   const [loading, setLoading]       = useState(true);
   const [error,   setError]         = useState(null);
 
-  // filtros y estados de dropdowns
-  const [search,     setSearch]     = useState('');
-  const [openOrder, setOpenOrder]   = useState(false);
-  const [orderValue, setOrderValue] = useState('nuevas');
-  const [orderItems] = useState([
+  // filtros y dropdowns
+  const [search,      setSearch]     = useState('');
+  const [openOrder,   setOpenOrder]  = useState(false);
+  const [orderValue,  setOrderValue] = useState('nuevas');
+  const [orderItems]                = useState([
     { label: 'Alfabético', value: 'alfabetico' },
-    { label: 'Más nuevas', value: 'nuevas' },
+    { label: 'Más nuevas',  value: 'nuevas' },
   ]);
 
-  const [openTipo, setOpenTipo]       = useState(false);
-  const [tipoValue, setTipoValue]     = useState('');
-  const [tipoItems, setTipoItems]     = useState([]);
+  const [openTipo,   setOpenTipo]   = useState(false);
+  const [tipoValue,  setTipoValue]  = useState('');
+  const [tipoItems,  setTipoItems]  = useState([]);
 
-  const [openIng, setOpenIng]         = useState(false);
-  const [ingValue, setIngValue]       = useState('');
-  const [ingItems, setIngItems]       = useState([]);
+  const [openIng,    setOpenIng]    = useState(false);
+  const [ingValue,   setIngValue]   = useState('');
+  const [ingItems,   setIngItems]   = useState([]);
 
-  // 1) Cada vez que la pantalla gana foco, recargamos recetas, tipos e ingredientes
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-      setLoading(true);
-      setError(null);
+  // 1) recarga global al ganar foco
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
 
-      (async () => {
-        try {
-          console.log('🔄 Cargando recetas, tipos e ingredientes…');
-          const [{ data: recs }, { data: tiposData }, { data: ingData }] =
-            await Promise.all([getRecetas(), getTipos(), getIngredientes()]);
+    (async () => {
+      try {
+        const [{ data: recs }, { data: tiposData }, { data: ingData }] =
+          await Promise.all([getRecetas(), getTipos(), getIngredientes()]);
+        if (!active) return;
 
-          if (!isActive) return;
-          console.log('✅ Datos recibidos:', recs.length, 'recetas,', tiposData.length, 'tipos,', ingData.length, 'ingredientes');
-          setRecetas(recs);
-          setTipos(tiposData);
-          setTipoItems([
-            { label: 'Todas las categorías', value: '' },
-            ...tiposData.map(t => ({ label: t.descripcion, value: t.idTipo })),
-          ]);
-          setIngItems([
-            { label: 'Todos los ingredientes', value: '' },
-            ...ingData.map(i => ({ label: i.nombre, value: i.nombre })),
-          ]);
-        } catch (e) {
-          console.error('❌ Error cargando datos:', e);
-          if (isActive) setError('No se pudieron cargar las recetas.');
-        } finally {
-          if (isActive) setLoading(false);
-        }
-      })();
-
-      return () => { isActive = false; };
-    }, [])
-  );
-
-  // 2) Cuando cambia ingValue, filtramos (o recargamos todo si vació)
-  useFocusEffect(
-    useCallback(() => {
-      if (ingValue === '') {
-        setLoading(true);
-        getRecetas()
-          .then(resp => setRecetas(resp.data))
-          .catch(() => setError('No se pudieron cargar las recetas.'))
-          .finally(() => setLoading(false));
-      } else {
-        setLoading(true);
-        getRecetasPorIngrediente(ingValue)
-          .then(resp => setRecetas(resp.data))
-          .catch(() => setError('Error cargando por ingrediente.'))
-          .finally(() => setLoading(false));
+        setRecetas(recs);
+        setTipos(tiposData);
+        setTipoItems([
+          { label: 'Todas las categorías', value: '' },
+          ...tiposData.map(t => ({ label: t.descripcion, value: t.idTipo })),
+        ]);
+        setIngItems([
+          { label: 'Todos los ingredientes', value: '' },
+          ...ingData.map(i => ({ label: i.nombre, value: i.nombre })),
+        ]);
+      } catch (e) {
+        if (active) setError('No se pudieron cargar las recetas.');
+      } finally {
+        if (active) setLoading(false);
       }
-    }, [ingValue])
-  );
+    })();
 
-  // 3) Composición final + búsqueda + orden + (slice de 3 comentado)
+    return () => { active = false; };
+  }, []));
+
+  // 2) filtrado por ingrediente/reactivación
+  useFocusEffect(useCallback(() => {
+    setLoading(true);
+    const fetch = ingValue === ''
+      ? getRecetas()
+      : getRecetasPorIngrediente(ingValue);
+
+    fetch
+      .then(resp => setRecetas(resp.data))
+      .catch(() => setError(ingValue ? 'Error cargando por ingrediente.' : 'No se pudieron cargar las recetas.'))
+      .finally(() => setLoading(false));
+  }, [ingValue]));
+
+  // 3) composición + búsqueda + orden + slice 3
   const displayList = useMemo(() => {
     let list = recetas;
 
+    // filtro por tipo
     if (tipoValue) {
       list = list.filter(r => r.idTipo === tipoValue);
     }
+    // búsqueda por nombre
     if (search) {
       const term = search.toLowerCase();
       list = list.filter(r => r.nombreReceta.toLowerCase().includes(term));
     }
+    // orden
     list = [...list].sort((a, b) => {
       if (orderValue === 'nuevas') {
         return new Date(b.fechaCreacion) - new Date(a.fechaCreacion);
-      } else {
-        return a.nombreReceta.localeCompare(b.nombreReceta);
       }
+      return a.nombreReceta.localeCompare(b.nombreReceta);
     });
 
-    // Mostrar solo las 3 más recientes si NO hay búsqueda ni filtro de tipo
-    // if (!search && !tipoValue) {
-    //   list = list.slice(0, 3);
-    // }
+    // slice a 3 SOLO si no hay filtros activos
+    if (!search && !tipoValue && !ingValue) {
+      list = list.slice(0, 3);
+    }
 
     return list;
-  }, [recetas, search, tipoValue, orderValue]);
+  }, [recetas, search, tipoValue, ingValue, orderValue]);
 
+  // estados de carga/error
   if (loading) {
     return (
       <View style={s.center}>
@@ -142,9 +136,9 @@ export default function RecipeListScreen({ navigation }) {
     );
   }
 
+  // cabecera con filtros
   const renderHeader = () => (
     <View style={s.filtersContainer}>
-      {/* Barra de búsqueda */}
       <View style={s.searchWrapper}>
         <Ionicons name="search" size={20} color={colors.secondary} style={s.searchIcon} />
         <TextInput
@@ -158,7 +152,6 @@ export default function RecipeListScreen({ navigation }) {
         />
       </View>
 
-      {/* Orden */}
       <DropDownPicker
         open={openOrder}
         value={orderValue}
@@ -170,7 +163,6 @@ export default function RecipeListScreen({ navigation }) {
         dropDownContainerStyle={s.dropdownList}
       />
 
-      {/* Tipo */}
       <DropDownPicker
         open={openTipo}
         value={tipoValue}
@@ -183,7 +175,6 @@ export default function RecipeListScreen({ navigation }) {
         dropDownContainerStyle={s.dropdownList}
       />
 
-      {/* Ingrediente */}
       <DropDownPicker
         open={openIng}
         value={ingValue}
@@ -198,6 +189,7 @@ export default function RecipeListScreen({ navigation }) {
     </View>
   );
 
+  // render de cada receta
   const handlePress = receta => {
     navigation.navigate('RecipeDetail', { recetaId: receta.idReceta });
   };
@@ -229,7 +221,15 @@ const s = StyleSheet.create({
   safe:              { flex: 1, backgroundColor: colors.background },
   center:            { flex:1, justifyContent:'center', alignItems:'center' },
   filtersContainer:  { marginBottom: 16 },
-  searchWrapper:     { flexDirection:'row', alignItems:'center', backgroundColor:'#fff', borderRadius:8, paddingHorizontal:8, height:40, marginBottom:12 },
+  searchWrapper:     {
+    flexDirection:'row',
+    alignItems:'center',
+    backgroundColor:'#fff',
+    borderRadius:8,
+    paddingHorizontal:8,
+    height:40,
+    marginBottom:12
+  },
   searchIcon:        { marginRight:6 },
   searchInput:       { flex:1, fontSize:16, color:colors.text, paddingVertical:0 },
   dropdownContainer: { marginBottom:12 },

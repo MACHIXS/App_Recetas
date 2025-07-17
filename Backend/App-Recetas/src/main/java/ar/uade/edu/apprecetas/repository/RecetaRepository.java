@@ -2,9 +2,12 @@ package ar.uade.edu.apprecetas.repository;
 
 import ar.uade.edu.apprecetas.entity.EstadoReceta;
 import ar.uade.edu.apprecetas.entity.Receta;
+import ar.uade.edu.apprecetas.entity.Usuario;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,5 +30,9 @@ public interface RecetaRepository extends JpaRepository<Receta, Integer> {
 
     @Query("SELECT r FROM Receta r WHERE r.usuario.mail = :mail")
     List<Receta> findByUsuarioMail(@Param("mail") String mail);
+
+
+    @Transactional
+    void deleteByUsuario(Usuario usuario);
 }
 

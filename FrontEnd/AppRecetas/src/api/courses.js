@@ -6,17 +6,19 @@ export const getSedes = () =>
 export const getCursos = () =>
   client.get('/cursos');
 
-export const getCronogramas = () =>
-  client.get('/cronogramas');
+//export const getCronogramas = () =>
+  //client.get('/cronogramas');
 
-export const getCronogramasPorCurso = idCurso =>
-  client.get(`/cronogramas/curso/${idCurso}`);
+export const getCronogramasPorCurso  = id => 
+  client.get(`/cronogramas/curso/${id}`);
 
-export const inscribirCurso = idCronograma =>
-  client.post(`/inscripciones/${idCronograma}`);
+export const inscribirCurso = id =>
+  client.post(`/inscripciones/${id}`);
 
-export const getMisInscripciones = () =>
-  client.get('/inscripciones');
 
-export const cancelarInscripcion = idInscripcion =>
-  client.delete(`/inscripciones/${idInscripcion}`);
+export const getInscripciones =
+ () => client.get('/inscripciones');
+
+ 
+export const cancelarInscripcion = id =>
+  client.delete(`/inscripciones/${id}`);
