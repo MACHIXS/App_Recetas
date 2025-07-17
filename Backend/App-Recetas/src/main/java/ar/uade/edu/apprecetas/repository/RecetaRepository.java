@@ -31,6 +31,13 @@ public interface RecetaRepository extends JpaRepository<Receta, Integer> {
     @Query("SELECT r FROM Receta r WHERE r.usuario.mail = :mail")
     List<Receta> findByUsuarioMail(@Param("mail") String mail);
 
+    Optional<Receta> findByIdRecetaAndEstado(Integer idReceta, EstadoReceta estado);
+
+    List<Receta> findByUsuario_Mail(String mailUsuario);
+
+    List<Receta> findByUtilizados_Ingrediente_NombreAndEstado(String nombre, EstadoReceta estado);
+
+
 
     @Transactional
     void deleteByUsuario(Usuario usuario);

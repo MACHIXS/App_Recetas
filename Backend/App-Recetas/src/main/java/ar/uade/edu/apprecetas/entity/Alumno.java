@@ -14,14 +14,15 @@ public class Alumno {
     @Id
     private Integer idAlumno;
 
-    @Column(nullable = false, length = 20)
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "idAlumno")
+    private Usuario usuario;
+
+
+    @Column(nullable = false, length = 16)
     private String numeroTarjeta;
 
-    @Column(nullable = false)
-    private LocalDate fechaVencimientoTarjeta;
-
-    @Column(nullable = false, length = 5)
-    private String codigoSeguridadTarjeta;
 
     @Column(nullable = false)
     private String dniFrente;
@@ -35,8 +36,5 @@ public class Alumno {
     @Column(nullable = false)
     private java.math.BigDecimal cuentaCorriente;
 
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "idAlumno")
-    private Usuario usuario;
+
 }

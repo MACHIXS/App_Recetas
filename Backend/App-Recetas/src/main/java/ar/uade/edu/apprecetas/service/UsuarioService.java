@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class UsuarioService {
@@ -52,6 +53,10 @@ public class UsuarioService {
 
     @Autowired
     private RecetaRepository recetaRepository;
+
+    @Autowired
+    private FileStorageService fileStorageService;
+
 
     // ─── MÉTODOS DE REGISTRO ─────────────────────────────────────────────────────
 
@@ -196,16 +201,15 @@ public class UsuarioService {
 
     // ─── MÉTODO DE CONVERSIÓN A ALUMNO ───────────────────────────────────────────
 
-    public void convertirAAlumno(
-            String mail,
-            String numeroTarjeta,
-            LocalDate fechaVencimientoTarjeta,
-            String codigoSeguridadTarjeta,
-            String tramite,
-            String urlDniFrente,
-            String urlDniFondo) {
+    @Transactional
+       public void convertirAAlumno(
+               String mailUsuario,
+               String numeroTarjeta,
+               String tramite,
+               String urlDniFrente,
+               String urlDniFondo) {
 
-        Usuario usuario = usuarioRepository.findByMail(mail)
+        Usuario usuario = usuarioRepository.findByMail(mailUsuario)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
         if (alumnoRepository.existsByUsuarioIdUsuario(usuario.getIdUsuario())) {
             throw new IllegalStateException("Ya eres alumno.");
@@ -214,8 +218,6 @@ public class UsuarioService {
         Alumno a = new Alumno();
         a.setUsuario(usuario);
         a.setNumeroTarjeta(numeroTarjeta);
-        a.setFechaVencimientoTarjeta(fechaVencimientoTarjeta);
-        a.setCodigoSeguridadTarjeta(codigoSeguridadTarjeta);
         a.setTramite(tramite);
         a.setDniFrente(urlDniFrente);
         a.setDniFondo(urlDniFondo);
@@ -252,4 +254,25 @@ public class UsuarioService {
                                 "El usuario no está registrado como alumno.")
                 );
     }
+
+    /** Comprueba si un alias ya está registrado */
+    public boolean aliasExists(String nickname) {
+        return usuarioRepository.existsByNickname(nickname);
+    }
+
+    /** Genera hasta 3 alias alternativos que no estén en uso */
+    public List<String> generarSugerenciasAlias(String base) {
+        List<String> sugerencias = new ArrayList<>();
+        Random rnd = new Random();
+        while (sugerencias.size() < 3) {
+            // por ejemplo, base + dos dígitos aleatorios
+            String candidato = base + (rnd.nextInt(90) + 10);
+            if (!usuarioRepository.existsByNickname(candidato)
+                    && !sugerencias.contains(candidato)) {
+                sugerencias.add(candidato);
+            }
+        }
+        return sugerencias;
+    }
 }
+

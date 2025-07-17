@@ -50,27 +50,68 @@ public class RecetaService {
         this.multimediaRepo = multimediaRepo;
     }
 
-    /** Listado básico de recetas */
-    public List<RecetaDto> listarRecetas() {
+    // ─── 1) LISTADO PÚBLICO (solo RECETAS APROBADAS) ────────────────────────────
+    public List<RecetaDto> listarRecetasPublicas() {
         return repo.findByEstado(EstadoReceta.APROBADA)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
-    /** Listado de recetas que usan un ingrediente */
-    public List<RecetaDto> listarPorIngrediente(String nombre) {
-        return repo.findByIngredienteNombre(nombre)
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+    // ─── 2) DETALLE PÚBLICO (solo si está APROBADA) ────────────────────────────
+    public RecetaDetailDTO getDetallePublico(Integer idReceta) {
+        Receta r = repo.findByIdRecetaAndEstado(idReceta, EstadoReceta.APROBADA)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Receta no encontrada o no aprobada"));
+        return toDetailDto(r);
     }
 
+    // ─── 3) APROBAR RECETA (solo ADMIN) ─────────────────────────────────────────
+    @Transactional
+    public void aprobarReceta(String mailUsuario, Integer idReceta) {
+        Usuario usuario = usuarioRepo.findByMail(mailUsuario)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (usuario.getRol() != Rol.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMIN puede aprobar");
+        }
+        Receta r = repo.findById(idReceta)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Receta no encontrada: " + idReceta));
+        r.setEstado(EstadoReceta.APROBADA);
+        // el repo.save(r) no es estrictamente necesario dentro de @Transactional si r es managed
+    }
+
+    // ─── 4) RECHAZAR RECETA (solo ADMIN) ────────────────────────────────────────
+    @Transactional
+    public void rechazarReceta(String mailUsuario, Integer idReceta) {
+        Usuario usuario = usuarioRepo.findByMail(mailUsuario)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (usuario.getRol() != Rol.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMIN puede rechazar");
+        }
+        if (!repo.existsById(idReceta)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Receta no encontrada: " + idReceta);
+        }
+        repo.deleteById(idReceta);
+    }
+
+    // ─── 5) LISTADOS INTERNOS EXISTENTES ────────────────────────────────────────
+
+    /** Listado básico (solo aprobadas) */
+    public List<RecetaDto> listarRecetas() {
+        return listarRecetasPublicas();
+    }
+
+    /** Listar por ingrediente (asumiendo que tu repo filtra por aprobada) */
+    public List<RecetaDto> listarPorIngrediente(String nombre) {
+        return repo.findByUtilizados_Ingrediente_NombreAndEstado(nombre, EstadoReceta.APROBADA)
+                .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    /** Listar mis recetas (admin o usuario) */
     public List<RecetaDto> listarMias(String mailUsuario) {
-        return repo.findByUsuarioMail(mailUsuario)
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+        return repo.findByUsuario_Mail(mailUsuario)
+                .stream().map(this::toDto).collect(Collectors.toList());
     }
 
     /** Crea o reemplaza la receta del usuario, borrando la versión anterior si existe */
@@ -84,11 +125,10 @@ public class RecetaService {
 
         // 2) ¿ya existe receta con ese nombre para este usuario?
         if ( repo.existsByUsuario_MailAndNombreReceta(mailUsuario, dto.getNombreReceta()) ) {
-            // borramos sus viejas recetas
+            // borramos sus viejas recetas (utilizados, pasos, multimedia, etc.)
             List<Receta> antiguas =
                     repo.findByUsuario_MailAndNombreReceta(mailUsuario, dto.getNombreReceta());
             antiguas.forEach(rec -> {
-                // elimina utilizados, pasos, multimedia…
                 utilizadoRepo.deleteAll(rec.getUtilizados());
                 pasoRepo.findByReceta_IdReceta(rec.getIdReceta())
                         .forEach(p -> multimediaRepo.deleteAll(p.getMultimedia()));
@@ -109,14 +149,10 @@ public class RecetaService {
         r.setEstado(EstadoReceta.PENDIENTE);
         repo.save(r);
 
+        // 4) Persistir ingredientes (Utilizado)
         for (var in : dto.getIngredientes()) {
-            // buscamos o creamos el ingrediente
             Ingrediente ing = ingrRepo.findByNombre(in.getNombre())
-                    .orElseGet(() -> {
-                        Ingrediente nuevo = new Ingrediente(in.getNombre());
-                        return ingrRepo.save(nuevo);
-                    });
-
+                    .orElseGet(() -> ingrRepo.save(new Ingrediente(in.getNombre())));
             Unidad uni = unidadRepo.findById(in.getIdUnidad())
                     .orElseThrow(() -> new IllegalArgumentException("Unidad no encontrada"));
 
@@ -124,7 +160,6 @@ public class RecetaService {
             uUtil.setReceta(r);
             uUtil.setIngrediente(ing);
             uUtil.setUnidad(uni);
-            // convierte BigDecimal → Integer si tu entidad usa Integer
             uUtil.setCantidad(in.getCantidad().intValue());
             uUtil.setObservaciones(in.getObservaciones());
             utilizadoRepo.save(uUtil);
@@ -148,13 +183,23 @@ public class RecetaService {
         }
     }
 
-    /** Util para mapear Receta ➞ RecetaDto */
+    /** Detalle completo (para admin u owner) */
+    public RecetaDetailDTO getDetalle(Integer idReceta) {
+        Receta r = repo.findById(idReceta)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return toDetailDto(r);
+    }
+
+    public List<RecetaDto> listarRecetasPendientes() {
+        return repo.findByEstado(EstadoReceta.PENDIENTE)
+                .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    // ─── Métodos auxiliares para mapear DTOs ────────────────────────────────────
+
     private RecetaDto toDto(Receta r) {
         double avg = r.getCalificaciones()
-                .stream()
-                .mapToInt(Calificacion::getCalificacion)
-                .average()
-                .orElse(0.0);
+                .stream().mapToInt(Calificacion::getCalificacion).average().orElse(0.0);
         return new RecetaDto(
                 r.getIdReceta(),
                 r.getNombreReceta(),
@@ -166,11 +211,7 @@ public class RecetaService {
         );
     }
 
-    /** Obtiene detalle completo de la receta */
-    public RecetaDetailDTO getDetalle(Integer idReceta) {
-        Receta r = repo.findById(idReceta)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
+    private RecetaDetailDTO toDetailDto(Receta r) {
         RecetaDetailDTO dto = new RecetaDetailDTO();
         dto.setIdReceta(r.getIdReceta());
         dto.setNombreReceta(r.getNombreReceta());
@@ -182,68 +223,38 @@ public class RecetaService {
         dto.setNickname(r.getUsuario().getNickname());
         dto.setIdTipo(r.getTipo().getIdTipo());
 
-        // Ingredientes
-        List<IngredienteDTO> ing = r.getUtilizados()
-                .stream()
+        dto.setIngredientes(r.getUtilizados().stream()
                 .map(u -> new IngredienteDTO(
                         u.getIngrediente().getNombre(),
                         u.getCantidad(),
                         u.getUnidad().getDescripcion(),
-                        u.getObservaciones()
-                ))
-                .collect(Collectors.toList());
-        dto.setIngredientes(ing);
+                        u.getObservaciones()))
+                .collect(Collectors.toList()));
 
-        // Pasos + multimedia
-        List<PasoDTO> pasos = r.getPasos()
-                .stream()
+        dto.setPasos(r.getPasos().stream()
                 .sorted(Comparator.comparing(Paso::getNroPaso))
                 .map(p -> new PasoDTO(
                         p.getNroPaso(),
                         p.getTexto(),
-                        p.getMultimedia()
-                                .stream()
+                        p.getMultimedia().stream()
                                 .map(m -> new MultimediaDTO(m.getTipoContenido(), m.getUrlContenido()))
                                 .collect(Collectors.toList())
                 ))
-                .collect(Collectors.toList());
-        dto.setPasos(pasos);
+                .collect(Collectors.toList()));
 
-        // Calificaciones
-        List<CalificacionDTO> cals = r.getCalificaciones()
-                .stream()
-                .map(c -> new CalificacionDTO(c.getUsuario().getNickname(),
+        dto.setCalificaciones(r.getCalificaciones().stream()
+                .map(c -> new CalificacionDTO(
+                        c.getUsuario().getNickname(),
                         c.getCalificacion(),
                         c.getComentarios()))
-                .collect(Collectors.toList());
-        dto.setCalificaciones(cals);
+                .collect(Collectors.toList()));
 
         return dto;
     }
 
-    /** Detecta tipo de multimedia según extensión */
     private String detectarTipo(String url) {
         if (url.endsWith(".mp4")) return "video";
         if (url.endsWith(".mp3")) return "audio";
         return "foto";
-    }
-
-    public void aprobarReceta(String mailUsuario, Integer idReceta) {
-        // 1) Buscamos al usuario que hace la petición
-        Usuario usuario = usuarioRepo.findByMail(mailUsuario)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-
-        // 2) Verificamos que sea ADMIN
-        if (usuario.getRol() != Rol.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo un admin puede aprobar recetas");
-        }
-
-        // 3) Buscamos la receta
-        Receta receta = repo.findById(idReceta)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receta no encontrada"));
-
-        // 4) Cambiamos el estado y guardamos
-        receta.setEstado(EstadoReceta.APROBADA);
-        repo.save(receta);
     }
 }

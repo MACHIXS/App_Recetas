@@ -42,27 +42,33 @@ export default function ProfileScreen({ navigation }) {
 
   // 2) Configuro el botón "Admin" dinámicamente tras leer el token
   useEffect(() => {
-      navigation.setOptions({ headerRight: null });
+  navigation.setOptions({ headerRight: null });
 
-    if (token) {
-      try {
-        const { roles } = jwtDecode(token);
-        if (Array.isArray(roles) && roles.includes('ADMIN')) {
-          navigation.setOptions({
-            headerRight: () => (
-              <Button
-                title="Admin"
-                onPress={() => navigation.navigate('RegistrosPendientes')}
-                color={colors.primary}
-              />
-            ),
-          });
-        }
-      } catch (err) {
-        console.error('Error decoding JWT:', err);
-      }
+  if (token) {
+    const { roles } = jwtDecode(token);
+    if (Array.isArray(roles) && roles.includes('ADMIN')) {
+      navigation.setOptions({
+        headerRight: () => (
+          // envolvemos TODO en un único contenedor
+          <View style={{ flexDirection: 'row', marginRight: 8 }}>
+            <Button
+              title="Usuarios"
+              onPress={() => navigation.navigate('RegistrosPendientes')}
+              color={colors.primary}
+            />
+            {/* espacio entre botones */}
+            <View style={{ width: 8 }} />
+            <Button
+              title="Recetas"
+              onPress={() => navigation.navigate('AdminRecetasPendientes')}
+              color={colors.primary}
+            />
+          </View>
+        ),
+      });
     }
-  }, [token, navigation]);
+  }
+}, [token, navigation]);
 
   // 3) Loading spinner
   if (loading) {

@@ -8,15 +8,20 @@ import {
   TouchableOpacity,
   Button,
   StyleSheet,
+  Platform,
+  StatusBar
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCursos } from '../api/courses';
 import colors from '../theme/colors';
 
 export default function CourseListScreen({ navigation }) {
   const [cursos, setCursos]   = useState([]);
   const [loading, setLoading] = useState(true);
+  const [token, setToken]     = useState(null);
 
-  // 1) Inyectar botón "Mis Inscripciones" en el header
+  // inyectar botón "Mis Inscripciones"
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -29,7 +34,20 @@ export default function CourseListScreen({ navigation }) {
     });
   }, [navigation]);
 
-  // 2) Cargar cursos al montar
+  // cargar token
+  useFocusEffect(
+  React.useCallback(() => {
+    let isActive = true;
+    AsyncStorage.getItem('jwt')
+      .then(t => {
+        if (isActive) setToken(t);
+      })
+      .catch(console.error);
+    return () => { isActive = false; };
+  }, [])
+);
+
+  // cargar cursos
   useEffect(() => {
     (async () => {
       try {
@@ -51,20 +69,32 @@ export default function CourseListScreen({ navigation }) {
     );
   }
 
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={[styles.card, !token && styles.cardDisabled]}
+      disabled={!token}
+      activeOpacity={token ? 0.7 : 1}
+      onPress={() => {
+        if (token) {
+          navigation.navigate('CourseDetail', { curso: item });
+        }
+      }}
+    >
+      <Text style={[styles.title, !token && styles.textDisabled]}>
+        {item.descripcion}
+      </Text>
+      <Text style={!token ? styles.textDisabled : null}>
+        Precio: ${item.precio}
+      </Text>
+    </TouchableOpacity>
+  );
+
   return (
     <FlatList
       data={cursos}
       keyExtractor={c => String(c.idCurso)}
-      contentContainerStyle={{ padding: 16 }}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('CourseDetail', { curso: item })}
-        >
-          <Text style={styles.title}>{item.descripcion}</Text>
-          <Text>Precio: ${item.precio}</Text>
-        </TouchableOpacity>
-      )}
+      contentContainerStyle={{ padding: 16, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16 }}
+      renderItem={renderItem}
     />
   );
 }
@@ -78,5 +108,11 @@ const styles = StyleSheet.create({
     marginBottom:12,
     shadowColor:'#000', shadowOpacity:0.1, shadowRadius:4, elevation:2
   },
-  title: { fontSize:18, fontWeight:'500', marginBottom:4 }
+  cardDisabled: {
+    backgroundColor: '#f0f0f0'
+  },
+  title: { fontSize:18, fontWeight:'500', marginBottom:4, color: colors.text },
+  textDisabled: {
+    color: colors.disabledText // define en tu theme un gris suave, por ej. '#888'
+  }
 });
