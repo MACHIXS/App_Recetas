@@ -52,4 +52,5 @@ public class CursoController {
     public void cancelar(@PathVariable Integer id) {
         svc.cancelarInscripcion(id);
     }
+
 }

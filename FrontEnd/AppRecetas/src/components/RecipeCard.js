@@ -17,42 +17,34 @@ export default function RecipeCard({
   onApprove
 }) {
   return (
-    <TouchableOpacity
-      style={s.card}
-      activeOpacity={0.8}
-      onPress={() => onPress(receta)}
-    >
-      <Image source={{ uri: receta.fotoPrincipal }} style={s.image} />
-      <View style={s.info}>
-        <Text style={s.title} numberOfLines={1}>
-          {receta.nombreReceta}
-        </Text>
-        <Text style={s.meta}>Por: {receta.nickname}</Text>
-        <Text style={s.meta}>
-          ⭐ {receta.calificacionPromedio?.toFixed(1) || 0}
-        </Text>
+    <View style={s.card}>
+      <TouchableOpacity activeOpacity={0.8} onPress={() => onPress(receta)}>
+        <Image source={{ uri: receta.fotoPrincipal }} style={s.image} />
+        <View style={s.info}>
+          <Text style={s.title} numberOfLines={1}>{receta.nombreReceta}</Text>
+          <Text style={s.meta}>Por: {receta.nickname}</Text>
+        </View>
+      </TouchableOpacity>
 
-        {showEstado && (
-          <Text
-            style={[
-              s.estado,
-              receta.estado === 'APROBADA' ? s.aprobada : s.pendiente
-            ]}
-          >
-            {receta.estado === 'APROBADA' ? '✅ Aprobada' : '🕒 Pendiente'}
-          </Text>
-        )}
+      {showEstado && (
+        <Text style={{
+          marginHorizontal: 12,
+          color: receta.estado === 'APROBADA' ? 'green' : 'orange'
+        }}>
+          {receta.estado === 'APROBADA' ? '✅ Aprobada' : '🕒 Pendiente'}
+        </Text>
+      )}
 
-        {isAdmin && receta.estado === 'PENDIENTE' && (
-          <View style={s.buttonWrapper}>
-            <Button
-              title="Aprobar"
-              onPress={() => onApprove(receta.idReceta)}
-            />
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+      {isAdmin && receta.estado === 'PENDIENTE' && (
+        <View style={s.approveButton}>
+          <Button
+            title="Aprobar"
+            onPress={() => onApprove(receta.idReceta)}
+            color={colors.primary}
+          />
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -79,19 +71,7 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: colors.secondary,
   },
-  estado: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  aprobada: {
-    color: 'green',
-  },
-  pendiente: {
-    color: 'orange',
-  },
-  buttonWrapper: {
-    marginTop: 8,
-    alignSelf: 'flex-start'
+  approveButton: {
+    margin: 12,
   },
 });

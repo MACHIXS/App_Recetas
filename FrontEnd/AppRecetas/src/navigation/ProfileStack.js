@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Button } from 'react-native';
 
 import ProfileScreen             from '../screens/ProfileScreen';
 import LoginScreen               from '../screens/LoginScreen';
@@ -8,13 +9,31 @@ import RegistroFinalScreen       from '../screens/RegistroFinalScreen';
 import PasswordResetRequestScreen  from '../screens/PasswordResetRequestScreen';
 import PasswordResetConfirmScreen  from '../screens/PasswordResetConfirmScreen';
 import UpgradeAlumnoScreen         from '../screens/UpgradeAlumnoScreen';
+import AdminPendingRegistrationsScreen from '../screens/AdminPendingRegistrationsScreen';
+import AdminButton                     from '../components/AdminButton';
+
 
 const Stack = createNativeStackNavigator();
 
 export default function ProfileStackScreen() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="ProfileHome" component={ProfileScreen} />
+      <Stack.Screen
+        name="ProfileHome"
+        component={ProfileScreen}
+        options={{ headerShown: true, title: 'Perfil' }}
+      />
+
+      {/* 2) Pantalla Admin */}
+      <Stack.Screen
+        name="RegistrosPendientes"
+        component={AdminPendingRegistrationsScreen}
+        options={{
+          headerShown: true,
+          title: 'Registros Pendientes'
+        }}
+      />
+
       <Stack.Screen name="Login"    component={LoginScreen} />
       <Stack.Screen name="RegistroIniciar" component={RegistroIniciarScreen} />
       <Stack.Screen name="RegistroFinal"   component={RegistroFinalScreen} />

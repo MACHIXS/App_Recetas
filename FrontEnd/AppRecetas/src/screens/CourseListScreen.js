@@ -1,19 +1,35 @@
-import React, { useEffect, useState } from 'react';
+// src/screens/CourseListScreen.js
+import React, { useEffect, useState, useLayoutEffect } from 'react';
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  Button,
   StyleSheet,
 } from 'react-native';
-import { getCursos, getCronogramasPorCurso } from '../api/courses';
+import { getCursos } from '../api/courses';
 import colors from '../theme/colors';
 
 export default function CourseListScreen({ navigation }) {
-  const [cursos, setCursos] = useState([]);
+  const [cursos, setCursos]   = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 1) Inyectar botón "Mis Inscripciones" en el header
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Button
+          title="Mis Inscrip."
+          onPress={() => navigation.navigate('Inscripciones')}
+          color={colors.primary}
+        />
+      ),
+    });
+  }, [navigation]);
+
+  // 2) Cargar cursos al montar
   useEffect(() => {
     (async () => {
       try {
@@ -43,10 +59,7 @@ export default function CourseListScreen({ navigation }) {
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.card}
-          onPress={() => navigation.navigate(
-            'CourseDetail',
-            { curso: item }
-          )}
+          onPress={() => navigation.navigate('CourseDetail', { curso: item })}
         >
           <Text style={styles.title}>{item.descripcion}</Text>
           <Text>Precio: ${item.precio}</Text>

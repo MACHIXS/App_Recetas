@@ -38,12 +38,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/recetas/**",
                                 "/api/tiposReceta/**",
-                                "/api/ingredientes/**",
-                                "/api/cursos/**",
-                                "/api/cronogramas/**",
-                                "/api/sedes/**").permitAll()
+                                "/api/ingredientes/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/cursos").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/cronogramas/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/sedes").permitAll()
+
+                        .requestMatchers(HttpMethod.GET,   "/api/cursos/inscripciones").hasRole("ALUMNO")
+                        .requestMatchers(HttpMethod.POST,  "/api/cursos/inscripciones/**").hasRole("ALUMNO")
+                        .requestMatchers(HttpMethod.DELETE,"/api/cursos/inscripciones/**").hasRole("ALUMNO")
 
                         .requestMatchers(HttpMethod.PATCH, "/api/recetas/*/aprobar").hasRole("ADMIN")
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
 
 
                         // todo lo demás requiere JWT
