@@ -110,6 +110,21 @@ public class RecetaService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    public List<RecetaDto> listarSinIngrediente(String nombre) {
+        return repo.findByEstadoAndSinIngrediente(EstadoReceta.APROBADA, nombre)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<RecetaDto> listarPorUsuario(String nickname) {
+        return repo
+                .findByUsuario_NicknameAndEstado(nickname, EstadoReceta.APROBADA)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     /** Listar mis recetas (todas, pendiente o aprobadas) */
     public List<RecetaDto> listarMias(String mailUsuario) {
         return repo.findByUsuario_Mail(mailUsuario)

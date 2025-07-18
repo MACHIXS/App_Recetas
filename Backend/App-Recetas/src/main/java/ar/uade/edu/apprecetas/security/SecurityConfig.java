@@ -50,6 +50,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/recetas/usuario").permitAll()
+
                         .requestMatchers(HttpMethod.GET,   "/api/cursos/inscripciones").hasRole("ALUMNO")
                         .requestMatchers(HttpMethod.POST,  "/api/cursos/inscripciones/**").hasRole("ALUMNO")
                         .requestMatchers(HttpMethod.DELETE,"/api/cursos/inscripciones/**").hasRole("ALUMNO")

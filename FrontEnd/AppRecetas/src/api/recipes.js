@@ -1,5 +1,7 @@
 import client from './client';
 
+//const BASE = 'http://192.168.0.242:8080/api/recetas';
+
 export const getRecetas = ()     => client.get('/recetas');
 
 export const getTipos = ()       => client.get('/tiposReceta');
@@ -8,6 +10,12 @@ export const getIngredientes = () => client.get('/ingredientes');
 
 export const getRecetasPorIngrediente = nombre =>
   client.get(`/recetas/ingrediente?nombre=${encodeURIComponent(nombre)}`);
+
+export const getRecetasSinIngrediente =nombre => 
+  client.get(`/recetas/sin-ingrediente?nombre=${encodeURIComponent(nombre)}`);
+
+export const getRecetasPorUsuario = nickname =>
+  client.get(`/recetas/usuario?nickname=${encodeURIComponent(nickname)}`);
 
 export const getRecetaDetalle = id =>
   client.get(`/recetas/${id}`);

@@ -37,7 +37,23 @@ public interface RecetaRepository extends JpaRepository<Receta, Integer> {
 
     List<Receta> findByUtilizados_Ingrediente_NombreAndEstado(String nombre, EstadoReceta estado);
 
+    List<Receta> findByUsuario_NicknameAndEstado(String nickname, EstadoReceta estado);
 
+    @Query("""
+      SELECT r 
+      FROM Receta r 
+      WHERE r.estado = :estado 
+        AND NOT EXISTS (
+          SELECT 1 
+          FROM Utilizado u 
+          WHERE u.receta = r 
+            AND u.ingrediente.nombre = :nombre
+        )
+      """)
+    List<Receta> findByEstadoAndSinIngrediente(
+            @Param("estado") EstadoReceta estado,
+            @Param("nombre")  String nombre
+    );
 
     @Transactional
     void deleteByUsuario(Usuario usuario);
