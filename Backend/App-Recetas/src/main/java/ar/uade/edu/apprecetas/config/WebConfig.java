@@ -2,23 +2,20 @@ package ar.uade.edu.apprecetas.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.*;
-import org.springframework.web.servlet.resource.PathResourceResolver;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${upload.dir:uploads}")
+    @Value("${file.upload-dir}")
     private String uploadDir;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Cuando el cliente pida /uploads/**, lo mapeamos a filesystem: uploads/
+        // Cada request a /uploads/** buscará el archivo en el filesystem en uploadDir
         registry
                 .addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadDir + "/")
-                .setCachePeriod(3600)  // opcional: cache en browser (segundos)
-                .resourceChain(true)
-                .addResolver(new PathResourceResolver());
+                .addResourceLocations("file:" + uploadDir + "/");
     }
 }

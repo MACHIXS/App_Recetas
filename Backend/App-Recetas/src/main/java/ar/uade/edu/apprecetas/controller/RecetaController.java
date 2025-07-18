@@ -5,6 +5,7 @@ import ar.uade.edu.apprecetas.dto.RecetaDetailDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDto;
 import ar.uade.edu.apprecetas.service.RecetaService;
 import ar.uade.edu.apprecetas.security.JwtUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,19 +31,23 @@ public class RecetaController {
         return service.listarPorIngrediente(nombre);
     }
 
-    /** Público: detalle (solo aprobadas) */
-    @GetMapping("/{id}")
-    public RecetaDetailDTO detalle(@PathVariable("id") Integer id) {
-        return service.getDetallePublico(id);
-    }
 
     /** Crear o reemplazar (requiere token) */
     @PostMapping
-    public ResponseEntity<Void> crearReceta(
+    public ResponseEntity<?> crearReceta(
             @RequestHeader("Authorization") String auth,
-            @RequestBody RecetaCreateDTO dto
+            @RequestBody RecetaCreateDTO dto,
+            @RequestParam(value = "replace", defaultValue = "false") boolean replace
     ) {
         String mail = jwtUtil.extractMail(auth.substring(7));
+
+        // Si ya existe y no pidió replace => 409 Conflict
+        if (!replace && service.recetaExiste(mail, dto.getNombreReceta())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Ya existe una receta con ese nombre. ¿Desea reemplazarla? Vuelva a llamar con ?");
+        }
+
+        // En cualquier otro caso (nueva o con replace=true), borra y re-crea:
         service.crearOReemplazarReceta(mail, dto);
         return ResponseEntity.ok().build();
     }
@@ -89,6 +94,15 @@ public class RecetaController {
     public List<RecetaDto> listarPendientes() {
         return service.listarRecetasPendientes();
     }
+
+    @GetMapping("/{id}")
+    public RecetaDetailDTO detalle(
+            @RequestHeader(value="Authorization", required=false) String auth,
+            @PathVariable("id") Integer id) {
+        return service.getDetalle(auth, id);
+    }
+
+
 }
 
 
