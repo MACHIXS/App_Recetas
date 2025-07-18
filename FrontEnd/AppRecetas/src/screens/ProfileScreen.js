@@ -157,15 +157,8 @@ export default function ProfileScreen({ navigation }) {
       <View style={{ height: 16 }} />
       <Button
         title="Mis recetas"
-        onPress={() =>
-          navigation.dispatch(
-            CommonActions.navigate({
-              name: 'Recetas',
-              params: { screen: 'MyRecipes' },
-            })
-          )
-        }
-        color={colors.primary}
+        onPress={() => navigation.navigate('MisRecetas')}
+        color = {colors.primary}   
       />
       <View style={{ height: 16 }} />
       <Button
@@ -176,9 +169,9 @@ export default function ProfileScreen({ navigation }) {
 
       <View style={{ height: 16 }} />
       <Button
-        title="Cuenta Corriente"
-        onPress={() => navigation.navigate('CuentaCorriente')}
-      />
+    title="Cuenta Corriente"
+    onPress={() => navigation.navigate('CuentaCorriente')}
+  />
 
 
       <View style={{ height: 200 }} />
