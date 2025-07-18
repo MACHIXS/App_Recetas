@@ -16,6 +16,7 @@ import AdminPendingRatingsScreen from '../screens/AdminPendingRatingsScreen';
 import SavedRecipesScreen from '../screens/SavedRecipesScreen';
 import RecipeDetailScreen from '../screens/RecipeDetailScreen';
 import CuentaCorrienteScreen from '../screens/CuentaCorrienteScreen';
+import PendingRecipesScreen from '../screens/PendingRecipesScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -39,8 +40,11 @@ export default function ProfileStackScreen() {
       <Stack.Screen name="RecetasPendientes" component={AdminPendingRecipesScreen} options={{ headerShown:true, title:'Aprobar Recetas' }} />
       <Stack.Screen name="CalificacionesPendientes" component={AdminPendingRatingsScreen} options={{ headerShown:true, title:'Aprobar Calificaciones' }} />
       <Stack.Screen name="SavedRecipes" component={SavedRecipesScreen} options={{ headerShown:true, title:'Recetas Guardadas' }} />
-      <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} options={{ title: 'Detalle de Receta' }}/>
+      <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} options={{headerShown:true, title: 'Detalle de Receta' }}/>
+      <Stack.Screen name="MisRecetas" component={PendingRecipesScreen} options={{headerShown:true, title: 'Detalle de Receta' }}/>
       <Stack.Screen name="CuentaCorriente" component={CuentaCorrienteScreen} options={{headerShown:true, title: 'Mi Cuenta Corriente' }}
+      
+
 />
   
 

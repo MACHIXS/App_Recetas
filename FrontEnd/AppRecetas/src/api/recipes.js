@@ -29,6 +29,10 @@ export const getMyRecetas = () =>
 export const aprobarReceta = id =>
   client.patch(`/recetas/${id}/aprobar`);
 
+export const listarRecetasPendientes = () => {
+  return client.get('/recetas/pendientes')
+}
+
 export const calificarReceta = (idReceta, calificacion, comentarios) =>
   client.post(`/recetas/${idReceta}/calificar`, { calificacion, comentarios });
 
