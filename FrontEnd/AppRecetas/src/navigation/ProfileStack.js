@@ -12,6 +12,7 @@ import UpgradeAlumnoScreen         from '../screens/UpgradeAlumnoScreen';
 import AdminPendingRegistrationsScreen from '../screens/AdminPendingRegistrationsScreen';
 import AdminButton                     from '../components/AdminButton';
 import AdminPendingRecipesScreen from '../screens/AdminPendingRecipesScreen';
+import AdminPendingRatingsScreen from '../screens/AdminPendingRatingsScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -31,8 +32,11 @@ export default function ProfileStackScreen() {
       <Stack.Screen name="PasswordResetRequest" component={PasswordResetRequestScreen} />
       <Stack.Screen name="PasswordResetConfirm" component={PasswordResetConfirmScreen} />
       <Stack.Screen name="UpgradeAlumno"          component={UpgradeAlumnoScreen} />
-      <Stack.Screen name="RegistrosPendientes" component={AdminPendingRegistrationsScreen} options={{ headerShown: true, title: 'Registros Pendientes' }} />
-      <Stack.Screen name="AdminRecetasPendientes" component={AdminPendingRecipesScreen} options={{ headerShown:true, title:'Aprobar Recetas' }} />
+      <Stack.Screen name="RegistrosPendientesUsuarios" component={AdminPendingRegistrationsScreen} options={{ headerShown: true, title: 'Registros Pendientes' }} />
+      <Stack.Screen name="RecetasPendientes" component={AdminPendingRecipesScreen} options={{ headerShown:true, title:'Aprobar Recetas' }} />
+      <Stack.Screen name="CalificacionesPendientes" component={AdminPendingRatingsScreen} options={{ headerShown:true, title:'Aprobar Calificaciones' }} 
+/>
+
     </Stack.Navigator>
   );
 }

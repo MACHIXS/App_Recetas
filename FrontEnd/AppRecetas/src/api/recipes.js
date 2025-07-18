@@ -28,3 +28,15 @@ export const getMyRecetas = () =>
 
 export const aprobarReceta = id =>
   client.patch(`/recetas/${id}/aprobar`);
+
+export const calificarReceta = (idReceta, calificacion, comentarios) =>
+  client.post(`/recetas/${idReceta}/calificar`, { calificacion, comentarios });
+
+export const getPendingRatings = () =>
+  client.get('/calificaciones/pendientes');
+
+export const approveRating = id =>
+  client.patch(`/calificaciones/${id}/aprobar`);
+
+export const rejectRating = id =>
+  client.delete(`/calificaciones/${id}/rechazar`);

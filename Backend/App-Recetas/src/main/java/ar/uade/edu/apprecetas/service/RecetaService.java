@@ -1,5 +1,6 @@
 package ar.uade.edu.apprecetas.service;
 
+import ar.uade.edu.apprecetas.dto.CalificacionPendingDTO;
 import ar.uade.edu.apprecetas.dto.RecetaCreateDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDetailDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDetailDTO.CalificacionDTO;
@@ -7,6 +8,7 @@ import ar.uade.edu.apprecetas.dto.RecetaDetailDTO.IngredienteDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDetailDTO.MultimediaDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDetailDTO.PasoDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDto;
+import ar.uade.edu.apprecetas.repository.CalificacionRepository;
 import ar.uade.edu.apprecetas.entity.*;
 import ar.uade.edu.apprecetas.repository.*;
 import ar.uade.edu.apprecetas.security.JwtUtil;
@@ -31,6 +33,7 @@ public class RecetaService {
     private final PasoRepository          pasoRepo;
     private final MultimediaRepository    multimediaRepo;
     private final JwtUtil                 jwtUtil;
+    private final CalificacionRepository calificacionRepo;
 
     public RecetaService(
             RecetaRepository repo,
@@ -41,7 +44,8 @@ public class RecetaService {
             UtilizadoRepository utilizadoRepo,
             PasoRepository pasoRepo,
             MultimediaRepository multimediaRepo,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            CalificacionRepository calificacionRepo) {
         this.repo = repo;
         this.usuarioRepo = usuarioRepo;
         this.tipoRepo = tipoRepo;
@@ -51,6 +55,7 @@ public class RecetaService {
         this.pasoRepo = pasoRepo;
         this.multimediaRepo = multimediaRepo;
         this.jwtUtil = jwtUtil;
+        this.calificacionRepo = calificacionRepo;
     }
 
     // ─── 1) LISTADO PÚBLICO (solo RECETAS APROBADAS) ────────────────────────────
@@ -236,6 +241,74 @@ public class RecetaService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    @Transactional
+    public void calificarReceta(String mailUsuario,
+                                Integer idReceta,
+                                Integer puntaje,
+                                String comentario) {
+        Usuario u = usuarioRepo.findByMail(mailUsuario)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+        Receta r = repo.findByIdRecetaAndEstado(idReceta, EstadoReceta.APROBADA)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Receta no encontrada o no aprobada"));
+
+        if (r.getUsuario().getMail().equals(mailUsuario)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No podés calificar tu propia receta");
+        }
+
+        Calificacion c = new Calificacion();
+        c.setReceta(r);
+        c.setUsuario(u);
+        c.setCalificacion(puntaje);
+        c.setComentarios(comentario);
+        c.setAprobado(false);
+        calificacionRepo.save(c);
+    }
+
+    /** 8) Listar calificaciones pendientes (solo ADMIN) */
+    public List<CalificacionPendingDTO> listarCalificacionesPendientes() {
+        return calificacionRepo.findByAprobadoFalse().stream()
+                .map(c -> new CalificacionPendingDTO(
+                        c.getId(),
+                        c.getReceta().getIdReceta(),
+                        c.getReceta().getNombreReceta(),
+                        c.getUsuario().getNickname(),
+                        c.getCalificacion(),
+                        c.getComentarios(),
+                        c.getFechaCreacion()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /** 9) Aprobar calificación (solo ADMIN) */
+    @Transactional
+    public void aprobarCalificacion(String mailAdmin, Integer idCalif) {
+        Usuario admin = usuarioRepo.findByMail(mailAdmin)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (admin.getRol() != Rol.ADMIN)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        Calificacion c = calificacionRepo.findById(idCalif)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        c.setAprobado(true);
+        calificacionRepo.save(c);
+    }
+
+    /** 10) Rechazar calificación (solo ADMIN) */
+    @Transactional
+    public void rechazarCalificacion(String mailAdmin, Integer idCalif) {
+        Usuario admin = usuarioRepo.findByMail(mailAdmin)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (admin.getRol() != Rol.ADMIN)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!calificacionRepo.existsById(idCalif))
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        calificacionRepo.deleteById(idCalif);
+    }
+
+
+
     // ─── Métodos auxiliares para mapear DTOs ────────────────────────────────────
 
     private RecetaDto toDto(Receta r) {
@@ -283,13 +356,16 @@ public class RecetaService {
                 ))
                 .collect(Collectors.toList()));
 
-        dto.setCalificaciones(r.getCalificaciones().stream()
-                .map(c -> new CalificacionDTO(
-                        c.getUsuario().getNickname(),
-                        c.getCalificacion(),
-                        c.getComentarios()))
-                .collect(Collectors.toList()));
-
+        dto.setCalificaciones(
+                calificacionRepo
+                        .findByReceta_IdRecetaAndAprobado(r.getIdReceta(), true)
+                        .stream()
+                        .map(c -> new CalificacionDTO(
+                                c.getUsuario().getNickname(),
+                                c.getCalificacion(),
+                                c.getComentarios()))
+                        .collect(Collectors.toList())
+        );
         return dto;
     }
 
@@ -298,4 +374,6 @@ public class RecetaService {
         if (url.endsWith(".mp3")) return "audio";
         return "foto";
     }
+
+
 }

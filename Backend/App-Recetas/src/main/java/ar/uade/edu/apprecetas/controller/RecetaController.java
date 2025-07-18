@@ -113,6 +113,21 @@ public class RecetaController {
         return service.listarPorUsuario(nickname);
     }
 
+    public static class CalificarDTO {
+        public Integer calificacion;
+        public String comentarios;
+    }
+
+    @PostMapping("/{idReceta}/calificar")
+    public ResponseEntity<Void> calificar(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Integer idReceta,
+            @RequestBody CalificarDTO dto) {
+
+        String mail = jwtUtil.extractMail(auth.substring(7));
+        service.calificarReceta(mail, idReceta, dto.calificacion, dto.comentarios);
+        return ResponseEntity.ok().build();
+    }
 
 }
 
