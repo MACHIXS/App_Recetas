@@ -19,6 +19,8 @@ export default function ProfileScreen({ navigation }) {
   const [mail, setMail]         = useState('');
   const [nickname, setNickname] = useState('');
   const [isAlumno, setIsAlumno] = useState(false);
+  const [isAdmin, setIsAdmin]   = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   // 1) Carga inicial de token y datos de usuario
   useFocusEffect(
@@ -33,6 +35,9 @@ export default function ProfileScreen({ navigation }) {
           setMail(await AsyncStorage.getItem('userMail'));
           setNickname(await AsyncStorage.getItem('userNickname'));
           setIsAlumno((await AsyncStorage.getItem('isAlumno')) === 'true');
+          const payload = JSON.parse(atob(t.split('.')[1]));
+          setIsAdmin(Array.isArray(payload.roles) && payload.roles.includes('ADMIN'));
+
         }
         setLoading(false);
       })();
@@ -51,18 +56,7 @@ export default function ProfileScreen({ navigation }) {
         headerRight: () => (
           // envolvemos TODO en un único contenedor
           <View style={{ flexDirection: 'row', marginRight: 8 }}>
-            <Button
-              title="Usuarios"
-              onPress={() => navigation.navigate('RegistrosPendientes')}
-              color={colors.primary}
-            />
-            {/* espacio entre botones */}
-            <View style={{ width: 8 }} />
-            <Button
-              title="Recetas"
-              onPress={() => navigation.navigate('AdminRecetasPendientes')}
-              color={colors.primary}
-            />
+            
           </View>
         ),
       });
@@ -107,6 +101,38 @@ export default function ProfileScreen({ navigation }) {
 
       <Text style={s.label}>Correo</Text>
       <Text style={s.value}>{mail}</Text>
+
+      {isAdmin && (
+        <>
+          <View style={{ height: 32 }} />
+          <Button
+            title="Admin"
+            onPress={() => setShowAdminMenu(v => !v)}
+            color={colors.primary}
+          />
+          {showAdminMenu && (
+            <View style={s.adminMenu}>
+              <Button
+                title="Usuarios Pendientes"
+                onPress={() => navigation.navigate('RegistrosPendientesUsuarios')}
+                color={colors.secondary}
+              />
+              <View style={{ height: 8 }} />
+              <Button
+                title="Recetas Pendientes"
+                onPress={() => navigation.navigate('RecetasPendientes')}
+                color={colors.secondary}
+              />
+              <View style={{ height: 8 }} />
+              <Button
+                title="Calificaciones Pendientes"
+                onPress={() => navigation.navigate('CalificacionesPendientes')}
+                color={colors.secondary}
+              />
+            </View>
+          )}
+        </>
+      )}
 
       {!isAlumno && (
         <>
@@ -180,5 +206,11 @@ const s = StyleSheet.create({
     color: colors.text,
     fontWeight: '500',
     marginBottom: 8,
+  },
+  adminMenu: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#fafafa',
+    borderRadius: 8,borderWidth: 1, borderColor: '#ddd', 
   },
 });
