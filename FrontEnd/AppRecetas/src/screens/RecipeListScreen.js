@@ -1,5 +1,3 @@
-// src/screens/RecipeListScreen.js
-
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   SafeAreaView,
@@ -14,11 +12,14 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import {
   getIngredientes,
   getRecetas,
   getTipos,
   getRecetasPorIngrediente,
+  getRecetasSinIngrediente,
+  getRecetasPorUsuario
 } from '../api/recipes';
 import RecipeCard from '../components/RecipeCard';
 import colors from '../theme/colors';
@@ -47,6 +48,15 @@ export default function RecipeListScreen({ navigation }) {
   const [ingValue,   setIngValue]   = useState('');
   const [ingItems,   setIngItems]   = useState([]);
 
+  const [openExcl, setOpenExcl] = useState(false);
+  const [exclValue, setExclValue] = useState('');
+  const [exclItems, setExclItems] = useState([]);
+  const [userFilter, setUserFilter] = useState('');
+  const [showAll, setShowAll] = useState(false);
+
+  const [filtersVisible, setFiltersVisible] = useState(false);
+
+
   // 1) recarga global al ganar foco
   useFocusEffect(
     useCallback(() => {
@@ -70,6 +80,10 @@ export default function RecipeListScreen({ navigation }) {
             { label: 'Todos los ingredientes', value: '' },
             ...ingData.map(i => ({ label: i.nombre, value: i.nombre })),
           ]);
+          setExclItems([
+            {label: 'Excluir Ingrediente', value: ''},
+            ...ingData.map(i => ({label: i.nombre, value: i.nombre }))
+          ])
         } catch (e) {
           if (active) setError('No se pudieron cargar las recetas.');
         } finally {
@@ -96,6 +110,52 @@ export default function RecipeListScreen({ navigation }) {
     }, [ingValue])
   );
 
+
+//filtro sin ingrediente
+  useFocusEffect(
+  useCallback(() => {
+    setLoading(true);
+    setError(null);
+
+    const fetchPromise = exclValue
+      ? getRecetasSinIngrediente(exclValue)
+      : ingValue
+        ? getRecetasPorIngrediente(ingValue)
+        : getRecetas();
+
+    fetchPromise
+      .then(resp => setRecetas(resp.data))
+      .catch(err => {
+        console.error(err);
+        setError('Error cargando recetas');
+      })
+      .finally(() => setLoading(false));
+  }, [ingValue, exclValue])
+);
+
+//Filtrar usuario
+useFocusEffect(useCallback(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+
+    const fetchPromise = userFilter
+      ? getRecetasPorUsuario(userFilter)
+      : ingValue
+        ? getRecetasPorIngrediente(ingValue)
+        : exclValue
+          ? getRecetasSinIngrediente(exclValue)
+          : getRecetas();
+
+    fetchPromise
+      .then(resp => { if (active) setRecetas(resp.data) })
+      .catch(() => { if (active) setError('Error cargando recetas'); })
+      .finally(() => { if (active) setLoading(false); });
+
+    return () => { active = false; };
+  }, [ingValue, exclValue]));
+
+
   // 3) composición + búsqueda + orden + slice 3
   const displayList = useMemo(() => {
     let list = recetas;
@@ -109,6 +169,12 @@ export default function RecipeListScreen({ navigation }) {
       const term = search.toLowerCase();
       list = list.filter(r => r.nombreReceta.toLowerCase().includes(term));
     }
+    if (userFilter) {
+      const term = userFilter.toLowerCase();
+      list = list.filter(r => r.nickname.toLowerCase().includes(term)
+  );
+}
+
     // orden
     list = [...list].sort((a, b) => {
       if (orderValue === 'nuevas') {
@@ -121,13 +187,13 @@ export default function RecipeListScreen({ navigation }) {
       return a.nombreReceta.localeCompare(b.nombreReceta);
     });
 
-    // slice a 3 SOLO si no hay filtros activos
-    if (!search && !tipoValue && !ingValue) {
-      list = list.slice(0, 3);
-    }
 
-    return list;
-  }, [recetas, search, tipoValue, ingValue, orderValue]);
+    const noFilters = !search && !tipoValue && !ingValue && !exclValue && !userFilter;
+   if (noFilters && !showAll) {
+     list = list.slice(0, 3);
+   }
+  return list;
+  }, [recetas, search, tipoValue, ingValue, exclValue, orderValue, showAll, userFilter]);
 
   // estados de carga/error
   if (loading) {
@@ -159,42 +225,83 @@ export default function RecipeListScreen({ navigation }) {
           autoCapitalize="none"
           returnKeyType="search"
         />
+        <TextInput
+        style={[s.searchInput, { marginBottom: 0 , borderWidth: 1, borderRadius: 8, borderColor: '#ddd', paddingVertical: 10, paddingLeft: 9, paddingRight: 20}]}
+        placeholder="Filtrar por autor..."
+        placeholderTextColor={colors.secondary}
+        value={userFilter}
+        onChangeText={setUserFilter}
+        autoCapitalize="none"
+        returnKeyType='done'
+      />
       </View>
 
-      <DropDownPicker
-        open={openOrder}
-        value={orderValue}
-        items={orderItems}
-        setOpen={setOpenOrder}
-        setValue={setOrderValue}
-        containerStyle={[s.dropdownContainer, { zIndex: 1000 }]}
-        style={s.dropdown}
-        dropDownContainerStyle={s.dropdownList}
-      />
+      
+    {/* Toggle Accordion */}
+    <TouchableOpacity
+      style={s.filtersToggle}
+      onPress={() => setFiltersVisible(v => !v)}
+    >
+      <Text style={s.filtersToggleText}>
+        {filtersVisible ? 'Ocultar filtros ▲' : 'Mostrar filtros ▼'}
+      </Text>
+    </TouchableOpacity>
 
-      <DropDownPicker
-        open={openTipo}
-        value={tipoValue}
-        items={tipoItems}
-        setOpen={setOpenTipo}
-        setValue={setTipoValue}
-        setItems={setTipoItems}
-        containerStyle={[s.dropdownContainer, { zIndex: 900 }]}
-        style={s.dropdown}
-        dropDownContainerStyle={s.dropdownList}
-      />
+    {filtersVisible && (
+      <>
+        {/* Orden */}
+        <DropDownPicker
+          open={openOrder}
+          value={orderValue}
+          items={orderItems}
+          setOpen={setOpenOrder}
+          setValue={setOrderValue}
+          containerStyle={[s.dropdownContainer, { zIndex: 1000 }]}
+          style={s.dropdown}
+          dropDownContainerStyle={s.dropdownList}
+        />
 
-      <DropDownPicker
-        open={openIng}
-        value={ingValue}
-        items={ingItems}
-        setOpen={setOpenIng}
-        setValue={setIngValue}
-        setItems={setIngItems}
-        containerStyle={[s.dropdownContainer, { zIndex: 800 }]}
-        style={s.dropdown}
-        dropDownContainerStyle={s.dropdownList}
-      />
+        {/* Tipo de receta */}
+        <DropDownPicker
+          open={openTipo}
+          value={tipoValue}
+          items={tipoItems}
+          setOpen={setOpenTipo}
+          setValue={setTipoValue}
+          setItems={setTipoItems}
+          containerStyle={[s.dropdownContainer, { zIndex: 900 }]}
+          style={s.dropdown}
+          dropDownContainerStyle={s.dropdownList}
+        />
+
+        {/* Con ingrediente */}
+        <DropDownPicker
+          open={openIng}
+          value={ingValue}
+          items={ingItems}
+          setOpen={setOpenIng}
+          setValue={setIngValue}
+          setItems={setIngItems}
+          containerStyle={[s.dropdownContainer, { zIndex: 800 }]}
+          style={s.dropdown}
+          dropDownContainerStyle={s.dropdownList}
+        />
+
+        {/* Sin ingrediente */}
+        <DropDownPicker
+          open={openExcl}
+          value={exclValue}
+          items={exclItems}
+          setOpen={setOpenExcl}
+          setValue={setExclValue}
+          setItems={setExclItems}
+          placeholder="Excluir ingrediente"
+          containerStyle={[s.dropdownContainer, { zIndex: 700 }]}
+          style={s.dropdown}
+          dropDownContainerStyle={s.dropdownList}
+        />
+      </>
+    )}
     </View>
   );
 
@@ -210,9 +317,27 @@ export default function RecipeListScreen({ navigation }) {
         data={displayList}
         keyExtractor={r => String(r.idReceta)}
         renderItem={({ item }) => <RecipeCard receta={item} onPress={handlePress} />}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 }}
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="none"
+
+           ListFooterComponent={() => {
+      // sólo mostrar si NO hay filtros activos
+      const noFilters = !search && !tipoValue && !ingValue && !exclValue && !userFilter;
+      if (!noFilters) return null;
+
+      return (
+        <View style={s.footerContainer}>
+          <TouchableOpacity onPress={() => setShowAll(v => !v)}>
+            <Text style={s.footerText}>
+              {showAll
+                ? 'Ver sólo 3 recetas ▲'
+                : 'Ver todas las recetas ▼'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }}
       />
 
       {/* FAB para crear receta */}
@@ -228,8 +353,30 @@ export default function RecipeListScreen({ navigation }) {
 
 const s = StyleSheet.create({
   safe:              { flex: 1, backgroundColor: colors.background },
-  center:            { flex:1, justifyContent:'center', alignItems:'center' },
+  center:            { flex:1, justifyContent: 'space-evenly', alignItems:'center' },
   filtersContainer:  { marginBottom: 16 },
+  footerContainer: {
+    marginVertical: 16,
+    alignItems: 'center',
+  },
+  filtersContainer:  { marginBottom: 1, paddingHorizontal: 16},
+  filtersToggle:     { borderWidth: 1,
+  borderColor: '#ddd',       
+  borderRadius: 8,           
+  paddingVertical: 8,
+  paddingHorizontal: 12,
+  backgroundColor: '#fff',   
+  alignItems: 'center',
+  marginBottom: 12},
+  
+  filtersToggleText: { color: colors.primary, fontWeight: '600'},
+  dropdownContainer: { marginBottom: 12 },
+  dropdown:          { backgroundColor: '#fff', borderRadius: 8, height: 40 },
+  dropdownList:      { backgroundColor: '#fff', borderRadius: 8 },
+  footerText: {
+    color: colors.primary,
+    fontWeight: '600', 
+  },
   searchWrapper:     {
     flexDirection:'row',
     alignItems:'center',
@@ -237,13 +384,16 @@ const s = StyleSheet.create({
     borderRadius:8,
     paddingHorizontal:8,
     height:40,
-    marginBottom:12
+    marginBottom:12, marginTop:10
+    , borderWidth: 1, borderRadius: 8, borderColor: '#ddd'
   },
   searchIcon:        { marginRight:6 },
-  searchInput:       { flex:1, fontSize:16, color:colors.text, paddingVertical:0 },
+  searchInput:       { flex:1, fontSize:16, color:colors.text, paddingVertical:0},
   dropdownContainer: { marginBottom:12 },
   dropdown:          { backgroundColor:'#fff', borderRadius:8, height:40 },
   dropdownList:      { backgroundColor:'#fff', borderRadius:8 },
+  loadMoreBtn:       { padding: 16, alignItems: 'center'},
+  loadMoreText:      {color: colors.primary, fontWeight: '600'},
   fab:               {
     position: 'absolute',
     bottom: 24, right: 24,

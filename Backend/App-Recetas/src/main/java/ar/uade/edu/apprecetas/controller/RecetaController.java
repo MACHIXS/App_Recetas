@@ -31,6 +31,12 @@ public class RecetaController {
         return service.listarPorIngrediente(nombre);
     }
 
+    /** Público: recetas que NO contienen el ingrediente dado */
+    @GetMapping("/sin-ingrediente")
+    public List<RecetaDto> recetasSinIngrediente(@RequestParam String nombre) {
+        return service.listarSinIngrediente(nombre);
+    }
+
 
     /** Crear o reemplazar (requiere token) */
     @PostMapping
@@ -100,6 +106,11 @@ public class RecetaController {
             @RequestHeader(value="Authorization", required=false) String auth,
             @PathVariable("id") Integer id) {
         return service.getDetalle(auth, id);
+    }
+
+    @GetMapping("/usuario")
+    public List<RecetaDto> byUsuario(@RequestParam String nickname) {
+        return service.listarPorUsuario(nickname);
     }
 
 
