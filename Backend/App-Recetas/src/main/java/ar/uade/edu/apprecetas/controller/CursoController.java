@@ -1,10 +1,7 @@
 package ar.uade.edu.apprecetas.controller;
 
 
-import ar.uade.edu.apprecetas.entity.CronogramaCurso;
-import ar.uade.edu.apprecetas.entity.Curso;
-import ar.uade.edu.apprecetas.entity.Inscripcion;
-import ar.uade.edu.apprecetas.entity.Sede;
+import ar.uade.edu.apprecetas.entity.*;
 import ar.uade.edu.apprecetas.service.CursoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

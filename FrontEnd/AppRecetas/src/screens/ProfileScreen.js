@@ -145,22 +145,15 @@ export default function ProfileScreen({ navigation }) {
         </>
       )}
 
-      <View style={{ height: 32 }} />
+      <View style={{ height: 16 }} />
 
       <Button
         title="Cambiar contraseña"
         onPress={() => navigation.navigate('PasswordResetRequest')}
         color={colors.primary}
       />
-      <View style={{ height: 16 }} />
-      <Button
-        title="Cerrar sesión"
-        onPress={async () => {
-          await AsyncStorage.clear();
-          navigation.navigate('Recetas');
-        }}
-        color={colors.error}
-      />
+      
+  
       <View style={{ height: 16 }} />
       <Button
         title="Mis recetas"
@@ -173,6 +166,32 @@ export default function ProfileScreen({ navigation }) {
           )
         }
         color={colors.primary}
+      />
+      <View style={{ height: 16 }} />
+      <Button
+        title="Recetas guardadas"
+        onPress={() => navigation.navigate('SavedRecipes')}
+        color={colors.primary}
+      />
+
+      <View style={{ height: 16 }} />
+      <Button
+        title="Cuenta Corriente"
+        onPress={() => navigation.navigate('CuentaCorriente')}
+      />
+
+
+      <View style={{ height: 200 }} />
+    
+      <Button 
+        title="Cerrar sesión"
+        onPress={async () => {
+          await AsyncStorage.clear();
+          navigation.navigate('Recetas');
+        }}
+        color={colors.error}
+        
+      
       />
     </View>
   );

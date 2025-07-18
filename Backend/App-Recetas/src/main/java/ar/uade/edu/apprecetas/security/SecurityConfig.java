@@ -59,7 +59,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE,"/api/cursos/inscripciones/**").hasRole("ALUMNO")
                         .requestMatchers(HttpMethod.PATCH, "/api/recetas/*/aprobar").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
+/*
+                        .requestMatchers(HttpMethod.POST,   "/api/lista/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/lista/**").authenticated()
+                        .requestMatchers(HttpMethod.GET,    "/api/lista").authenticated()
+*/
                         .requestMatchers("/error").permitAll()
 
                         // todo lo demás requiere JWT

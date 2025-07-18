@@ -4,6 +4,7 @@ import RecipeListScreen   from '../screens/RecipeListScreen';
 import RecipeDetailScreen from '../screens/RecipeDetailScreen';
 import RecipeFormScreen from '../screens/RecipeFormScreen';
 import MyRecipesScreen     from '../screens/MyRecipesScreen';
+import SavedRecipesScreen from '../screens/SavedRecipesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +31,10 @@ export default function RecipeStack() {
         component={RecipeFormScreen}
         options={{ title: 'Crear / Editar Receta' }}
       /> 
+      <Stack.Screen
+        name="SavedRecipes"
+        component={SavedRecipesScreen}
+      />
     </Stack.Navigator>
   );
 }

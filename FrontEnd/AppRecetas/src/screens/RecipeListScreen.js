@@ -12,6 +12,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {
   getIngredientes,
@@ -55,12 +56,18 @@ export default function RecipeListScreen({ navigation }) {
   const [showAll, setShowAll] = useState(false);
 
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [isLogged, setIsLogged] =useState([]);
 
 
   // 1) recarga global al ganar foco
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      (async () => {
+        const t = await AsyncStorage.getItem('jwt');
+        if (active) setIsLogged(!!t);
+      })();
+
       setLoading(true);
       setError(null);
 
@@ -341,12 +348,15 @@ useFocusEffect(useCallback(() => {
       />
 
       {/* FAB para crear receta */}
+      {isLogged && (
+        
       <TouchableOpacity
         style={s.fab}
         onPress={() => navigation.navigate('RecipeForm')}
       >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
