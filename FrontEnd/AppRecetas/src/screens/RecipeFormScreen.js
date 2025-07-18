@@ -1,4 +1,3 @@
-// AppRecetas/src/screens/RecipeFormScreen.js
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -234,34 +233,119 @@ export default function RecipeFormScreen({ navigation }) {
     });
   };
 
-  const handleSubmit = async () => {
-    if (!nombre || !tipoValue || !descripcion || !porciones || !cantidadPersonas || !principalUri) {
-      Alert.alert('Error', 'Completa todos los campos');
+const handleSubmit = async () => {
+  // 1) Validaciones previas
+  if (
+    !nombre ||
+    !tipoValue ||
+    !descripcion ||
+    !porciones ||
+    !cantidadPersonas ||
+    !principalUri
+  ) {
+    Alert.alert('Error', 'Completa todos los campos obligatorios');
+    return;
+  }
+  for (let ing of ingredients) {
+    if (!ing.nombre || !ing.cantidad || !ing.unidad) {
+      Alert.alert('Error', 'Completa todos los campos de los ingredientes');
       return;
     }
-    for (let ing of ingredients) {
-      if (!ing.nombre || !ing.cantidad || !ing.unidad) {
-        Alert.alert('Error', 'Completa los ingredientes');
-        return;
-      }
+  }
+  for (let p of steps) {
+    if (!p.texto) {
+      Alert.alert('Error', 'Describe todos los pasos');
+      return;
     }
-    setLoading(true);
-    try {
-      const token = await AsyncStorage.getItem('jwt');
-      const urlPrincipal = await uploadFile(principalUri, token);
-      const ingredDto = ingredients.map(i => ({ nombre: i.nombre, cantidad: parseFloat(i.cantidad), idUnidad: i.unidad, observaciones: i.observaciones }));
-      const pasosDto = await Promise.all(steps.map(async (p, idx) => ({ nroPaso: idx + 1, texto: p.texto, multimediaUrls: await Promise.all(p.images.map(u => uploadFile(u, token))) })));
-      const dto = { nombreReceta: nombre, descripcionReceta: descripcion, fotoPrincipal: urlPrincipal, porciones: parseInt(porciones, 10), cantidadPersonas: parseInt(cantidadPersonas, 10), idTipo: tipoValue, ingredientes: ingredDto, pasos: pasosDto };
-      await axios.post('http://192.168.0.242:8080/api/recetas', dto, { headers: { Authorization: `Bearer ${token}` } });
-      Alert.alert('Éxito', 'Receta creada correctamente');
-      navigation.goBack();
-    } catch (e) {
+  }
+
+  setLoading(true);
+  const token = await AsyncStorage.getItem('jwt');
+  const headers = { Authorization: `Bearer ${token}` };
+
+  // 2) Subo la foto principal y construyo el payload (DTO)
+  let payload;
+  try {
+    const urlPrincipal = await uploadFile(principalUri, token);
+
+    const ingredDto = ingredients.map(i => ({
+      nombre:       i.nombre,
+      cantidad:     parseFloat(i.cantidad),
+      idUnidad:     i.unidad,
+      observaciones:i.observaciones
+    }));
+
+    const pasosDto = await Promise.all(
+      steps.map(async (p, idx) => ({
+        nroPaso:        idx + 1,
+        texto:          p.texto,
+        multimediaUrls: await Promise.all(p.images.map(u => uploadFile(u, token)))
+      }))
+    );
+
+    payload = {
+      nombreReceta:      nombre,
+      descripcionReceta: descripcion,
+      fotoPrincipal:     urlPrincipal,
+      porciones:         parseInt(porciones, 10),
+      cantidadPersonas:  parseInt(cantidadPersonas, 10),
+      idTipo:            tipoValue,
+      ingredientes:      ingredDto,
+      pasos:             pasosDto
+    };
+  } catch (errUpload) {
+    setLoading(false);
+    return Alert.alert(
+      'Error',
+      'No se pudieron subir las imágenes: ' + errUpload.message
+    );
+  }
+
+  // 3) Intento crear sin replace
+  try {
+    await axios.post(
+      'http://192.168.0.242:8080/api/recetas',
+      payload,
+      { headers }
+    );
+    Alert.alert('Éxito', 'Receta creada correctamente');
+    navigation.goBack();
+
+  } catch (e) {
+    // 4) Si ya existe (409), preguntar al usuario
+    if (e.response?.status === 409) {
+      Alert.alert(
+        'Receta existe',
+        e.response.data,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Reemplazar',
+            onPress: async () => {
+              try {
+                await axios.post(
+                  'http://192.168.0.242:8080/api/recetas?replace=true',
+                  payload,
+                  { headers }
+                );
+                Alert.alert('Éxito', 'Receta reemplazada correctamente');
+                navigation.goBack();
+              } catch (err2) {
+                Alert.alert('Error', err2.response?.data || err2.message);
+              }
+            }
+          }
+        ]
+      );
+    } else {
       console.error(e);
       Alert.alert('Error', e.response?.data || e.message);
-    } finally {
-      setLoading(false);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   if (loading) {
     return <View style={styles.loading}><ActivityIndicator size="large" color={colors.primary} /></View>;

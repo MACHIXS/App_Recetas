@@ -1,8 +1,6 @@
 package ar.uade.edu.apprecetas.service;
 
 import ar.uade.edu.apprecetas.dto.RecetaCreateDTO;
-import ar.uade.edu.apprecetas.dto.RecetaCreateDTO.IngredienteIn;
-import ar.uade.edu.apprecetas.dto.RecetaCreateDTO.PasoIn;
 import ar.uade.edu.apprecetas.dto.RecetaDetailDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDetailDTO.CalificacionDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDetailDTO.IngredienteDTO;
@@ -11,6 +9,7 @@ import ar.uade.edu.apprecetas.dto.RecetaDetailDTO.PasoDTO;
 import ar.uade.edu.apprecetas.dto.RecetaDto;
 import ar.uade.edu.apprecetas.entity.*;
 import ar.uade.edu.apprecetas.repository.*;
+import ar.uade.edu.apprecetas.security.JwtUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,23 +30,27 @@ public class RecetaService {
     private final UtilizadoRepository     utilizadoRepo;
     private final PasoRepository          pasoRepo;
     private final MultimediaRepository    multimediaRepo;
+    private final JwtUtil                 jwtUtil;
 
-    public RecetaService(RecetaRepository repo,
-                         UsuarioRepository usuarioRepo,
-                         TipoRecetaRepository tipoRepo,
-                         IngredienteRepository ingrRepo,
-                         UnidadRepository unidadRepo,
-                         UtilizadoRepository utilizadoRepo,
-                         PasoRepository pasoRepo,
-                         MultimediaRepository multimediaRepo) {
-        this.repo           = repo;
-        this.usuarioRepo    = usuarioRepo;
-        this.tipoRepo       = tipoRepo;
-        this.ingrRepo       = ingrRepo;
-        this.unidadRepo     = unidadRepo;
-        this.utilizadoRepo  = utilizadoRepo;
-        this.pasoRepo       = pasoRepo;
+    public RecetaService(
+            RecetaRepository repo,
+            UsuarioRepository usuarioRepo,
+            TipoRecetaRepository tipoRepo,
+            IngredienteRepository ingrRepo,
+            UnidadRepository unidadRepo,
+            UtilizadoRepository utilizadoRepo,
+            PasoRepository pasoRepo,
+            MultimediaRepository multimediaRepo,
+            JwtUtil jwtUtil) {
+        this.repo = repo;
+        this.usuarioRepo = usuarioRepo;
+        this.tipoRepo = tipoRepo;
+        this.ingrRepo = ingrRepo;
+        this.unidadRepo = unidadRepo;
+        this.utilizadoRepo = utilizadoRepo;
+        this.pasoRepo = pasoRepo;
         this.multimediaRepo = multimediaRepo;
+        this.jwtUtil = jwtUtil;
     }
 
     // ─── 1) LISTADO PÚBLICO (solo RECETAS APROBADAS) ────────────────────────────
@@ -78,7 +81,6 @@ public class RecetaService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Receta no encontrada: " + idReceta));
         r.setEstado(EstadoReceta.APROBADA);
-        // el repo.save(r) no es estrictamente necesario dentro de @Transactional si r es managed
     }
 
     // ─── 4) RECHAZAR RECETA (solo ADMIN) ────────────────────────────────────────
@@ -97,35 +99,37 @@ public class RecetaService {
 
     // ─── 5) LISTADOS INTERNOS EXISTENTES ────────────────────────────────────────
 
-    /** Listado básico (solo aprobadas) */
+    /** Listar todas las aprobadas */
     public List<RecetaDto> listarRecetas() {
         return listarRecetasPublicas();
     }
 
-    /** Listar por ingrediente (asumiendo que tu repo filtra por aprobada) */
+    /** Listar por ingrediente (solo aprobadas) */
     public List<RecetaDto> listarPorIngrediente(String nombre) {
         return repo.findByUtilizados_Ingrediente_NombreAndEstado(nombre, EstadoReceta.APROBADA)
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    /** Listar mis recetas (admin o usuario) */
+    /** Listar mis recetas (todas, pendiente o aprobadas) */
     public List<RecetaDto> listarMias(String mailUsuario) {
         return repo.findByUsuario_Mail(mailUsuario)
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    /** Crea o reemplaza la receta del usuario, borrando la versión anterior si existe */
     @Transactional
     public void crearOReemplazarReceta(String mailUsuario, RecetaCreateDTO dto) {
-        // 1) cargar usuario y tipo…
+        // DEBUG: verifica que llegue la llamada
+        System.out.println("📝 crearOReemplazarReceta llamado para user="
+                + mailUsuario + " con nombreReceta=" + dto.getNombreReceta());
+
+        // 1) Cargo el usuario y el tipo de receta
         Usuario u = usuarioRepo.findByMail(mailUsuario)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
         TipoReceta tipo = tipoRepo.findById(dto.getIdTipo())
                 .orElseThrow(() -> new IllegalArgumentException("Tipo no encontrado"));
 
-        // 2) ¿ya existe receta con ese nombre para este usuario?
-        if ( repo.existsByUsuario_MailAndNombreReceta(mailUsuario, dto.getNombreReceta()) ) {
-            // borramos sus viejas recetas (utilizados, pasos, multimedia, etc.)
+        // 2) Si ya había recetas con ese nombre para este usuario, las borro
+        if (repo.existsByUsuario_MailAndNombreReceta(mailUsuario, dto.getNombreReceta())) {
             List<Receta> antiguas =
                     repo.findByUsuario_MailAndNombreReceta(mailUsuario, dto.getNombreReceta());
             antiguas.forEach(rec -> {
@@ -137,7 +141,7 @@ public class RecetaService {
             });
         }
 
-        // 3) Creo la nueva receta
+        // 3) Creo la nueva receta en estado PENDIENTE
         Receta r = new Receta();
         r.setUsuario(u);
         r.setTipo(tipo);
@@ -149,7 +153,7 @@ public class RecetaService {
         r.setEstado(EstadoReceta.PENDIENTE);
         repo.save(r);
 
-        // 4) Persistir ingredientes (Utilizado)
+        // 4) Persisto los ingredientes (tabla Utilizado)
         for (var in : dto.getIngredientes()) {
             Ingrediente ing = ingrRepo.findByNombre(in.getNombre())
                     .orElseGet(() -> ingrRepo.save(new Ingrediente(in.getNombre())));
@@ -165,7 +169,7 @@ public class RecetaService {
             utilizadoRepo.save(uUtil);
         }
 
-        // 5) Persistir pasos y multimedia
+        // 5) Persisto los pasos y su multimedia
         for (var pIn : dto.getPasos()) {
             Paso p = new Paso();
             p.setReceta(r);
@@ -183,13 +187,35 @@ public class RecetaService {
         }
     }
 
-    /** Detalle completo (para admin u owner) */
-    public RecetaDetailDTO getDetalle(Integer idReceta) {
+    /** Devuelve true si ya existe receta con ese nombre para ese usuario */
+    public boolean recetaExiste(String mailUsuario, String nombreReceta) {
+        return repo.existsByUsuario_MailAndNombreReceta(mailUsuario, nombreReceta);
+    }
+
+    /** 6) DETALLE COMPLETO, permitiendo ver pendientes si eres dueño/admin */
+    public RecetaDetailDTO getDetalle(String authHeader, Integer idReceta) {
+        String mail = null;
+        boolean esAdmin = false;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            mail = jwtUtil.extractMail(token);
+            esAdmin = jwtUtil.extractRoles(token).contains("ADMIN");
+        }
+
         Receta r = repo.findById(idReceta)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receta no encontrada"));
+
+        if (r.getEstado() == EstadoReceta.PENDIENTE
+                && !esAdmin
+                && !r.getUsuario().getMail().equals(mail)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Receta no encontrada o no aprobada");
+        }
+
         return toDetailDto(r);
     }
 
+    /** Listar pendientes (solo admin) */
     public List<RecetaDto> listarRecetasPendientes() {
         return repo.findByEstado(EstadoReceta.PENDIENTE)
                 .stream().map(this::toDto).collect(Collectors.toList());

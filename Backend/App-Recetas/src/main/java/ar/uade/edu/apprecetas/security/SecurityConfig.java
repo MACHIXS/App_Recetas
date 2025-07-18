@@ -42,18 +42,18 @@ public class SecurityConfig {
                                 "/api/unidades/**"
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/uploads/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/cursos").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/cronogramas/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/sedes").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET,   "/api/cursos/inscripciones").hasRole("ALUMNO")
                         .requestMatchers(HttpMethod.POST,  "/api/cursos/inscripciones/**").hasRole("ALUMNO")
                         .requestMatchers(HttpMethod.DELETE,"/api/cursos/inscripciones/**").hasRole("ALUMNO")
-
-                        .requestMatchers(HttpMethod.POST, "/api/files/upload").permitAll()
-
                         .requestMatchers(HttpMethod.PATCH, "/api/recetas/*/aprobar").hasRole("ADMIN")
-
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .requestMatchers("/error").permitAll()
