@@ -1,3 +1,4 @@
+// src/main/java/ar/uade/edu/apprecetas/entity/Inscripcion.java
 package ar.uade.edu.apprecetas.entity;
 
 import jakarta.persistence.*;
@@ -5,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,10 +18,8 @@ public class Inscripcion {
 
     @ManyToOne @JoinColumn(name = "idAlumno")
     private Alumno alumno;
-
     @ManyToOne @JoinColumn(name = "idCronograma")
     private CronogramaCurso cronograma;
 
     private LocalDateTime fecha;
 }
-

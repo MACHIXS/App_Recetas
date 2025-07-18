@@ -1,5 +1,5 @@
 // src/screens/RecipeDetailScreen.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -11,24 +11,33 @@ import {
   TextInput,
   Button,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import StarRating from 'react-native-star-rating-widget';
 import axios from 'axios';
-import { getRecetaDetalle ,calificarReceta} from '../api/recipes';
+import { getRecetaDetalle } from '../api/recipes';
 import colors from '../theme/colors';
 
-export default function RecipeDetailScreen({ route }) {
+const STORAGE_KEY = 'savedRecipes';
+
+export default function RecipeDetailScreen({ route, navigation }) {
   const { recetaId } = route.params;
   const [detalle, setDetalle]   = useState(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
+
+  // Estados de guardado
+  const [isSaved, setIsSaved]         = useState(false);
+  const [savingStorage, setSavingStorage] = useState(false);
 
   // Estados para la valoración
   const [rating, setRating]     = useState(0);
   const [comment, setComment]   = useState('');
   const [sending, setSending]   = useState(false);
 
+  // 1) Cargo detalle
   useEffect(() => {
     (async () => {
       try {
@@ -43,6 +52,48 @@ export default function RecipeDetailScreen({ route }) {
     })();
   }, [recetaId]);
 
+  // 2) Verifico si está guardado cada vez que la pantalla gana foco
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      const json = await AsyncStorage.getItem(STORAGE_KEY);
+      const list = json ? JSON.parse(json) : [];
+      setIsSaved(list.some(r => r.idReceta === recetaId));
+    })();
+  }, [recetaId]));
+
+  // 3) Toggle guardado
+  const toggleSave = async () => {
+    // si no está logueado, token no existe
+    const token = await AsyncStorage.getItem('jwt');
+    if (!token) {
+      Alert.alert('Atención', 'Necesitás iniciar sesión para guardar recetas.');
+      return;
+    }
+
+    setSavingStorage(true);
+    try {
+      const json = await AsyncStorage.getItem(STORAGE_KEY);
+      const list = json ? JSON.parse(json) : [];
+
+      let newList;
+      if (isSaved) {
+        // quitar
+        newList = list.filter(r => r.idReceta !== recetaId);
+      } else {
+        // agregar
+        newList = [...list, { idReceta: recetaId, nombreReceta: detalle.nombreReceta, fotoPrincipal: detalle.fotoPrincipal }];
+      }
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+      setIsSaved(!isSaved);
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'No se pudo actualizar la lista de guardadas.');
+    } finally {
+      setSavingStorage(false);
+    }
+  };
+
+  // 4) Envío de calificación
   const submitRating = async () => {
     if (rating === 0) {
       Alert.alert('Error', 'Seleccioná una cantidad de estrellas.');
@@ -69,7 +120,7 @@ export default function RecipeDetailScreen({ route }) {
 
   if (loading) return (
     <View style={styles.center}>
-      <ActivityIndicator size="large" color={colors.primary} />
+      <ActivityIndicator size="large" color={colors.primary}/>
     </View>
   );
   if (error) return (
@@ -83,17 +134,27 @@ export default function RecipeDetailScreen({ route }) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        {/* FOTO PRINCIPAL */}
-        <Image
-          source={{ uri: detalle.fotoPrincipal }}
-          style={styles.image}
-        />
+        {/* FOTO */}
+        <Image source={{ uri: detalle.fotoPrincipal }} style={styles.image}/>
 
-        {/* TÍTULO */}
-        <Text style={styles.title}>{detalle.nombreReceta}</Text>
-        <Text style={styles.meta}>Por: {detalle.nickname}</Text>
+        {/* TITULO + BOTÓN GUARDAR */}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>{detalle.nombreReceta}</Text>
+            <Text style={styles.meta}>Por: {detalle.nickname}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={toggleSave}
+            disabled={savingStorage}
+            style={[styles.saveBtn, savingStorage && { opacity: 0.6 }]}
+          >
+            <Text style={{ color: '#fff' }}>
+              {isSaved ? 'Quitar' : 'Guardar'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* DESCRIPCIÓN */}
+        {/* DESCRIPCION */}
         <Text style={styles.section}>Descripción</Text>
         <Text style={styles.text}>{detalle.descripcionReceta}</Text>
 
@@ -112,19 +173,13 @@ export default function RecipeDetailScreen({ route }) {
           <View key={idx} style={styles.step}>
             <Text style={styles.stepTitle}>Paso {p.nroPaso}</Text>
             <Text style={styles.text}>{p.texto}</Text>
-            {p.multimedia.map((m, i2) => (
-              m.tipoContenido === 'foto' && (
-                <Image
-                  key={i2}
-                  source={{ uri: m.urlContenido }}
-                  style={styles.stepImage}
-                />
-              )
+            {p.multimedia.map((m, i2) => m.tipoContenido === 'foto' && (
+              <Image key={i2} source={{ uri: m.urlContenido }} style={styles.stepImage}/>
             ))}
           </View>
         ))}
 
-        {/* CALIFICACIONES APROBADAS */}
+        {/* COMENTARIOS APROBADOS */}
         <Text style={styles.section}>Comentarios Aprobados</Text>
         {detalle.calificaciones.length === 0
           ? <Text style={styles.text}>Aún no hay calificaciones.</Text>
@@ -139,12 +194,9 @@ export default function RecipeDetailScreen({ route }) {
             ))
         }
 
-        {/* FORMULARIO DE VALORACIÓN */}
+        {/* FORMULARIO DE VALORACION */}
         <Text style={styles.section}>Valorar esta receta</Text>
-        <StarRating
-          rating={rating}
-          onChange={setRating}
-        />
+        <StarRating rating={rating} onChange={setRating}/>
         <TextInput
           style={[styles.input, { height: 80 }]}
           placeholder="Dejá un comentario (opcional)"
@@ -165,26 +217,24 @@ export default function RecipeDetailScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex:1, backgroundColor: colors.background },
-  container:   { padding:16 },
-  center:      { flex:1, justifyContent:'center', alignItems:'center' },
-  image:       { width:'100%', height:200, borderRadius:12, marginBottom:16 },
-  title:       { fontSize:24, fontWeight:'600', color:colors.text },
-  meta:        { fontSize:14, color:colors.secondary, marginBottom:12 },
-  section:     { fontSize:18, fontWeight:'500', color:colors.primary, marginTop:16 },
-  text:        { fontSize:16, color:colors.text, marginVertical:4 },
-  step:        { marginBottom:12 },
-  stepTitle:   { fontSize:16, fontWeight:'500', marginBottom:4 },
-  stepImage:   { width:'100%', height:150, borderRadius:8, marginTop:4 },
-  ratingBox:   { backgroundColor:'#fafafa', padding:12, borderRadius:8, marginVertical:8 },
-  textBold:    { fontSize:16, fontWeight:'600', color:colors.text },
-  input:       {
-    borderWidth:1,
-    borderColor:colors.text,
-    borderRadius:8,
-    padding:10,
-    backgroundColor:'#fff',
-    color:colors.text,
+  safe:      { flex:1, backgroundColor: colors.background },
+  container:{ padding:16 },
+  center:   { flex:1, justifyContent:'center', alignItems:'center' },
+  image:    { width:'100%', height:200, borderRadius:12, marginBottom:16 },
+  headerRow:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center' },
+  title:    { fontSize:24, fontWeight:'600', color:colors.text },
+  meta:     { fontSize:14, color:colors.secondary, marginBottom:12 },
+  saveBtn:  { backgroundColor: colors.primary, padding:8, borderRadius:6 },
+  section:  { fontSize:18, fontWeight:'500', color:colors.primary, marginTop:16 },
+  text:     { fontSize:16, color:colors.text, marginVertical:4 },
+  step:     { marginBottom:12 },
+  stepTitle:{ fontSize:16, fontWeight:'500', marginBottom:4 },
+  stepImage:{ width:'100%', height:150, borderRadius:8, marginTop:4 },
+  ratingBox:{ backgroundColor:'#fafafa', padding:12, borderRadius:8, marginVertical:8 },
+  textBold: { fontSize:16, fontWeight:'600', color:colors.text },
+  input:    {
+    borderWidth:1, borderColor:colors.text, borderRadius:8,
+    padding:10, backgroundColor:'#fff', color:colors.text,
     marginBottom:12
   },
 });

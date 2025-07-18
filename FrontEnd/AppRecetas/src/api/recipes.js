@@ -40,3 +40,9 @@ export const approveRating = id =>
 
 export const rejectRating = id =>
   client.delete(`/calificaciones/${id}/rechazar`);
+
+export const guardarReceta         = id => client.post(`/lista/${id}`);
+
+export const eliminarRecetaGuardada = id => client.delete(`/lista/${id}`);
+
+export const getRecetasGuardadas   = () => client.get('/lista');
