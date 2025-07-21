@@ -1,0 +1,10 @@
+# Ignorar carpeta de compilación de Maven
+target/
+
+# Ignorar archivos y carpetas de macOS
+__MACOSX/
+*.DS_Store
+**/._*
+
+# (Opcional) Ignorar logs locales u otros temporales
+*.log
