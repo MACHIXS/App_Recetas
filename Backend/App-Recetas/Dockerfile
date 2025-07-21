@@ -1,18 +1,24 @@
-# Stage 1: build
-FROM maven:3.8.8-eclipse-temurin-17 AS build
+# 1) Stage de compilación con Maven
+FROM maven:3.8.8-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# Copiamos only the pom for caching
-COPY Backend/App-Recetas/pom.xml ./pom.xml
+# Copiamos el pom primero y bajamos dependencias (cache)
+COPY pom.xml .
 RUN mvn dependency:go-offline
 
-# Copiamos el código
-COPY Backend/App-Recetas/src ./src
+# Ahora copiamos el código y lo compilamos
+COPY src ./src
 RUN mvn package -DskipTests
 
-# Stage 2: runtime
-FROM eclipse-temurin:17-jre-alpine
+# 2) Stage de runtime con JRE más ligero
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
+
+# Copiamos el jar empaquetado desde el build-stage
 COPY --from=build /app/target/*.jar app-recetas.jar
+
+# Puerto en el que corre tu aplicación
 EXPOSE 8080
+
+# Comando que arranca Spring Boot
 ENTRYPOINT ["java","-jar","app-recetas.jar"]
