@@ -103,7 +103,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
     try {
       const token = await AsyncStorage.getItem('jwt');
       await axios.post(
-        `http://192.168.0.242:8080/api/recetas/${recetaId}/calificar`,
+        `http://172.20.10.9:8080/api/recetas/${recetaId}/calificar`,
         { calificacion: rating, comentarios: comment },
         { headers: { Authorization: `Bearer ${token}` } }
       );

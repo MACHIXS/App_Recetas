@@ -1,6 +1,6 @@
 import client from './client';
 
-//const BASE = 'http://192.168.0.242:8080/api/recetas';
+//const BASE = 'http://172.20.10.9:8080/api/recetas';
 
 export const getRecetas = ()     => client.get('/recetas');
 

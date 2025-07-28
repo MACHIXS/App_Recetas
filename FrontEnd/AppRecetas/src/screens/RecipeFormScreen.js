@@ -41,7 +41,7 @@ async function uploadFile(uri, token) {
   const form = new FormData();
   form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' });
   const res = await axios.post(
-    'http://192.168.0.242:8080/api/files/upload',
+    'http://172.20.10.9:8080/api/files/upload',
     form,
     { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
   );
@@ -210,8 +210,8 @@ export default function RecipeFormScreen({ navigation }) {
         const token = await AsyncStorage.getItem('jwt');
         const headers = { Authorization: `Bearer ${token}` };
         const [tRes, uRes] = await Promise.all([
-          axios.get('http://192.168.0.242:8080/api/tiposReceta', { headers }),
-          axios.get('http://192.168.0.242:8080/api/unidades',   { headers })
+          axios.get('http://172.20.10.9:8080/api/tiposReceta', { headers }),
+          axios.get('http://172.20.10.9:8080/api/unidades',   { headers })
         ]);
         setTipoItems(tRes.data.map(t => ({ label: t.descripcion, value: t.idTipo })));
         setUnidadItems(uRes.data.map(u => ({ label: u.descripcion, value: u.idUnidad })));
@@ -304,7 +304,7 @@ const handleSubmit = async () => {
   // 3) Intento crear sin replace
   try {
     await axios.post(
-      'http://192.168.0.242:8080/api/recetas',
+      'http://172.20.10.9:8080/api/recetas',
       payload,
       { headers }
     );
@@ -324,7 +324,7 @@ const handleSubmit = async () => {
             onPress: async () => {
               try {
                 await axios.post(
-                  'http://192.168.0.242:8080/api/recetas?replace=true',
+                  'http://172.20.10.9:8080/api/recetas?replace=true',
                   payload,
                   { headers }
                 );

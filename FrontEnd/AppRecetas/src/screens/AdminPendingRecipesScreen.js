@@ -14,7 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function AdminPendingRecipesScreen() {
   const [recipes, setRecipes] = useState([]);
   const [token, setToken]     = useState(null);
-  const BACKEND = 'http://192.168.0.242:8080/api/recetas';
+  const BACKEND = 'http://172.20.10.9:8080/api/recetas';
 
   // 1) leo token
   useEffect(() => {

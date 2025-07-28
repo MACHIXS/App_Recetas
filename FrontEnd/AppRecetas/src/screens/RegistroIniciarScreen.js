@@ -18,7 +18,7 @@ import colors from '../theme/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
 
-const BASE_URL = 'http://192.168.0.242:8080/api/auth';
+const BASE_URL = 'http://172.20.10.9:8080/api/auth';
 
 export default function RegistroIniciarScreen({ navigation }) {
   const [mail, setMail] = useState('');
@@ -58,7 +58,7 @@ export default function RegistroIniciarScreen({ navigation }) {
       await AsyncStorage.setItem('regMail', mail);
       await AsyncStorage.setItem('regAlias', alias);
       navigation.dispatch(
-        CommonActions.navigate('RegistroFinal')
+        CommonActions.navigate({name :'RegistroFinal', params:{mail,alias}})
       );
     } catch (e) {
       console.error(e);

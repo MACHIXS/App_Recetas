@@ -72,7 +72,7 @@ export default function UpgradeAlumnoScreen({ navigation }) {
       form.append('dniFondo',  { uri: backUri,   name: 'dorso.jpg',  type: 'image/jpeg' });
 
       await axios.post(
-        'http://192.168.0.242:8080/api/usuarios/convertir',
+        'http://172.20.10.9:8080/api/usuarios/convertir',
         form,
         {
           headers: {

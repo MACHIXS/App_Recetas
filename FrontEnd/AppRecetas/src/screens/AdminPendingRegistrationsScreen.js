@@ -18,7 +18,7 @@ export default function AdminPendingRegistrationsScreen() {
   const [token, setToken]     = useState(null);
   const navigation            = useNavigation();
   const isFocused             = useIsFocused();
-  const BACKEND               = 'http://192.168.0.242:8080/api';
+  const BACKEND               = 'http://172.20.10.9:8080/api';
 
   // 1) Leer token guardado como 'jwt' en LoginScreen
   useEffect(() => {
